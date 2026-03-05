@@ -1,0 +1,210 @@
+/* ===== VARIABLES & CORE ===== */
+:root {
+    --bg-main: #0a0c10;
+    --bg-card: #12161f;
+    --bg-surface: #1a1f2b;
+    --accent: #ff2e88;
+    --accent-glow: rgba(255, 46, 136, 0.4);
+    --border: rgba(255, 255, 255, 0.08);
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --success: #10b981;
+    --danger: #ef4444;
+}
+
+body {
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+}
+
+/* Scrollbar */
+.scroll-slim::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scroll-slim::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scroll-slim::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+/* ===== LAYOUT & HEADERS ===== */
+.builder-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.builder-subtitle {
+    color: var(--text-secondary);
+}
+
+.section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin: 25px 0 15px;
+}
+
+/* ===== COMPONENT SLOTS ===== */
+.slot-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+    .slot-item:hover {
+        border-color: var(--accent);
+        background: #161b26;
+        transform: translateX(4px);
+    }
+
+    .slot-item.empty {
+        opacity: 0.7;
+        border-style: dashed;
+    }
+
+.slot-icon-sm {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: var(--text-secondary);
+}
+
+.slot-item:not(.empty) .slot-icon-sm {
+    color: var(--accent);
+    background: rgba(255,46,136,0.12);
+}
+
+.slot-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.slot-value {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Buttons */
+.btn-add-modern, .btn-clear-slot {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+    .btn-add-modern:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+        box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .btn-clear-slot:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+    }
+
+/* ===== SUMMARY PANEL ===== */
+.summary-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 24px;
+    position: sticky;
+    top: 20px;
+}
+
+.total-price {
+    font-size: 2.4rem;
+    font-weight: 800;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+.progress-modern {
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-modern-bar {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.6s ease;
+}
+
+/* ===== MODAL & RESULTS ===== */
+.modal-modern {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+}
+
+.modal-header-custom {
+    padding: 24px 30px;
+    border-bottom: 1px solid var(--border);
+}
+
+.result-card-v2 {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: 0.2s;
+}
+
+    .result-card-v2:hover {
+        background: var(--bg-surface);
+        border-color: var(--accent);
+    }
+
+.offer-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    margin-bottom: 5px;
+    cursor: pointer;
+}
+
+    .offer-item:hover {
+        background: rgba(255,46,136,0.1);
+    }
+
+.btn-primary-modern {
+    background: linear-gradient(145deg, var(--accent), #d02b72);
+    border: none;
+    color: white;
+    font-weight: 700;
+    padding: 16px;
+    border-radius: 14px;
+    width: 100%;
+    box-shadow: 0 8px 20px rgba(255,46,136,0.3);
+}

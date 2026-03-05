@@ -1,0 +1,46 @@
+﻿@{
+    var type = ViewData["Type"]?.ToString() ?? "Unknown";
+    var icon = ViewData["Icon"]?.ToString() ?? "bi-box";
+}
+
+<div class="slot-item empty mb-3" data-slot-type="@type">
+
+    <div class="p-3 d-flex align-items-center justify-content-between">
+
+        <!-- LEFT SIDE -->
+        <div class="d-flex align-items-center">
+
+            <div class="slot-icon-sm me-3">
+                <i class="bi @icon"></i>
+            </div>
+
+            <div>
+                <div class="slot-label">@type</div>
+                <div class="slot-value js-slot-res">
+                    Не выбрано
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT SIDE -->
+        <div class="d-flex align-items-center gap-2">
+
+            <button class="btn-clear-slot"
+                    onclick="clearSlot('@type')"
+                    title="Удалить компонент">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+            <button class="btn-add-modern"
+                    data-bs-toggle="modal"
+                    data-bs-target="#selectionModal"
+                    data-component-name="@type">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
