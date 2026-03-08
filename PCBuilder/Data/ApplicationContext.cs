@@ -42,6 +42,7 @@ namespace PCBuilder.Data
                     ImageUrl = "https://ir.ozone.ru/s3/multimedia-1/6884562541.jpg"
                 }
             );
+            //
 
             modelBuilder.Entity<ProductOffer>().HasData(
                 new ProductOffer { Id = 1, ComponentId = 1, MerchantName = "Citilink", Price = 25900 },
