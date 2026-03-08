@@ -129,10 +129,13 @@
         </div>
     </div>
 </div>
+<div>
+    нну ты чмо лох бла бла бла
+</div>
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const modalEl = document.getElementById('selectionModal');
             const bootstrapModal = new bootstrap.Modal(modalEl);
             const searchInput = document.getElementById('componentSearchInput');
@@ -178,10 +181,10 @@
                 for (const [cat, item] of Object.entries(selectedItems)) {
                     total += item.selectedPrice;
                     html += `
-                        <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-secondary">${cat}</span>
-                            <span class="fw-bold">${item.selectedPrice.toLocaleString()} ₽</span>
-                        </div>`;
+                            <div class="d-flex justify-content-between mb-2 small">
+                                <span class="text-secondary">${cat}</span>
+                                <span class="fw-bold">${item.selectedPrice.toLocaleString()} ₽</span>
+                            </div>`;
                 }
                 summaryList.innerHTML = html || '<div class="text-muted text-center">Сборка не начата</div>';
                 document.getElementById('totalPriceDisplay').textContent = total.toLocaleString() + ' ₽';
@@ -221,22 +224,22 @@
                     }
 
                     listContainer.innerHTML = data.map(item => `
-                        <div class="result-card-v2">
-                            <div class="result-img-container" style="width: 60px;"><img src="${item.image || '/img/no-image.png'}" class="img-fluid"></div>
-                            <div class="ms-3 flex-grow-1">
-                                <div class="fw-bold text-white">${item.name}</div>
-                                <div class="small text-secondary">${item.specs || ''}</div>
-                                <div class="mt-2">
-                                    ${item.offers.map(o => `
-                                        <div class="offer-item small" onclick="window.selectComp('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${o.price}, ${item.powerScore || 0})">
-                                            <span>${o.description || 'Цена'}</span>
-                                            <span class="text-accent fw-bold">${o.price.toLocaleString()} ₽</span>
-                                        </div>
-                                    `).join('')}
+                            <div class="result-card-v2">
+                                <div class="result-img-container" style="width: 60px;"><img src="${item.image || '/img/no-image.png'}" class="img-fluid"></div>
+                                <div class="ms-3 flex-grow-1">
+                                    <div class="fw-bold text-white">${item.name}</div>
+                                    <div class="small text-secondary">${item.specs || ''}</div>
+                                    <div class="mt-2">
+                                        ${item.offers.map(o => `
+                                            <div class="offer-item small" onclick="window.selectComp('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${o.price}, ${item.powerScore || 0})">
+                                                <span>${o.description || 'Цена'}</span>
+                                                <span class="text-accent fw-bold">${o.price.toLocaleString()} ₽</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `).join('');
+                        `).join('');
                 } catch (e) {
                     listContainer.innerHTML = '<div class="text-danger text-center py-5">Ошибка загрузки</div>';
                 }
@@ -280,6 +283,6 @@
 
             updateUI();
         });
-        // ты чмо лох и вообще бла бла
+        // ты кто это читает - ты лох и вообще бла бла бла, я просто тестировал отображение текста внизу страницы, не обижайся пожалуйста, я тебя люблю <3
     </script>
 }
