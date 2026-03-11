@@ -24,15 +24,15 @@
         <div class="col-lg-8">
             @{
                 var categories = new[] {
-                        new { Name = "Процессор", Icon = "bi-cpu", Section = "Вычислительное ядро" },
-                        new { Name = "Материнская плата", Icon = "bi-motherboard", Section = "Вычислительное ядро" },
-                        new { Name = "Видеокарта", Icon = "bi-gpu-card", Section = "Вычислительное ядро" },
-                        new { Name = "Оперативная память", Icon = "bi-memory", Section = "Память" },
-                        new { Name = "Накопитель SSD", Icon = "bi-device-ssd", Section = "Память" },
-                        new { Name = "Блок питания", Icon = "bi-lightning-charge", Section = "Энергия" },
-                        new { Name = "Корпус", Icon = "bi-pc-display", Section = "Энергия" },
-                        new { Name = "Охлаждение", Icon = "bi-fan", Section = "Энергия" }
-                        };
+                    new { Name = "Процессор",         Icon = "bi-cpu",             Section = "Вычислительное ядро" },
+                    new { Name = "Материнская плата",  Icon = "bi-motherboard",     Section = "Вычислительное ядро" },
+                    new { Name = "Видеокарта",         Icon = "bi-gpu-card",        Section = "Вычислительное ядро" },
+                    new { Name = "Оперативная память", Icon = "bi-memory",          Section = "Память" },
+                    new { Name = "Накопитель SSD",     Icon = "bi-device-ssd",      Section = "Память" },
+                    new { Name = "Блок питания",       Icon = "bi-lightning-charge",Section = "Энергия" },
+                    new { Name = "Корпус",             Icon = "bi-pc-display",      Section = "Энергия" },
+                    new { Name = "Охлаждение",         Icon = "bi-fan",             Section = "Энергия" }
+                };
                 string currentSection = "";
             }
 
@@ -46,10 +46,8 @@
 
                 <div class="slot-item empty mb-3" data-slot-category="@cat.Name">
                     <div class="p-3 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <div class="slot-icon-sm me-3">
-                                <i class="bi @cat.Icon"></i>
-                            </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi @cat.Icon slot-icon-plain"></i>
                             <div>
                                 <div class="slot-label">@cat.Name</div>
                                 <div class="slot-value js-slot-res text-white-50">Ожидание выбора...</div>
@@ -72,10 +70,10 @@
             <div class="summary-panel">
                 <h5 class="fw-bold mb-4">Детализация <span class="badge bg-dark text-accent ms-2 border border-secondary">v3.5</span></h5>
 
-                <div id="selectedComponentsPrices" class="summary-list mb-4">
-                </div>
+                <div id="selectedComponentsPrices" class="summary-list mb-4"></div>
 
-                <div class="analysis-section p-3 rounded-4 mb-4" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border);">
+                <div class="analysis-section p-3 rounded-4 mb-4"
+                     style="background: rgba(0,0,0,0.2); border: 1px solid var(--border);">
                     <div id="alertStack"></div>
 
                     <div class="balance-item mb-3">
@@ -83,7 +81,9 @@
                             <span class="small text-secondary">Баланс CPU / GPU</span>
                             <span id="efficiencyVal" class="small fw-bold">0%</span>
                         </div>
-                        <div class="progress-modern"><div id="efficiencyFill" class="progress-modern-bar" style="width:0%"></div></div>
+                        <div class="progress-modern">
+                            <div id="efficiencyFill" class="progress-modern-bar" style="width:0%"></div>
+                        </div>
                     </div>
 
                     <div class="balance-item">
@@ -92,12 +92,14 @@
                             <span id="tdpVal" class="small fw-bold">0W</span>
                         </div>
                         <div class="progress-modern" style="height: 4px;">
-                            <div id="tdpFill" class="progress-modern-bar" style="width:0%; background: var(--success);"></div>
+                            <div id="tdpFill" class="progress-modern-bar"
+                                 style="width:0%; background: var(--success);"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="price-container text-center py-3 mb-4 rounded-4" style="background: rgba(255,255,255,0.03);">
+                <div class="price-container text-center py-3 mb-4 rounded-4"
+                     style="background: rgba(255,255,255,0.03);">
                     <div class="price-label small text-secondary mb-1">ИТОГО К ОПЛАТЕ</div>
                     <div id="totalPriceDisplay" class="total-price text-white">0 ₽</div>
                 </div>
@@ -108,152 +110,204 @@
     </div>
 </div>
 
+<!-- ===== MODAL ===== -->
 <div class="modal fade" id="selectionModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content modal-modern text-white">
+
             <div class="modal-header-custom d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="m-0">Выбор компонента</h4>
-                    <span id="modalSubTitle" class="badge bg-primary mt-2"></span>
+                <div class="d-flex align-items-center gap-3 flex-grow-1" style="min-width:0">
+                    <div class="search-toggle-wrap">
+                        <button class="btn-search-toggle" id="searchToggleBtn" title="Поиск">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <div class="search-slide-wrap" id="searchSlideWrap">
+                            <input type="text" id="componentSearchInput"
+                                   class="search-slide-input"
+                                   placeholder="Поиск по названию...">
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="m-0">Выбор компонента</h4>
+                        <span id="modalSubTitle" class="badge bg-primary mt-1"></span>
+                    </div>
                 </div>
-                <button type="button" class="btn-close-custom" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+                <button type="button" class="btn-close-custom-v2" data-bs-dismiss="modal" aria-label="Закрыть">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
+
             <div class="modal-body p-4">
-                <div class="search-wrapper position-relative mb-4">
-                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
-                    <input type="text" id="componentSearchInput" class="form-control bg-dark text-white border-secondary ps-5" placeholder="Поиск по названию...">
-                </div>
-                <div id="componentsList" class="results-grid-modern scroll-slim" style="max-height: 60vh; overflow-y: auto;">
+                <div id="componentsList"
+                     class="components-blocks-wrap scroll-slim"
+                     style="max-height: 65vh; overflow-y: auto; padding-right: 4px;">
                 </div>
             </div>
         </div>
     </div>
 </div>
-<div>
-    нну ты чмо лох бла бла бла
-</div>
+
+
 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const modalEl = document.getElementById('selectionModal');
-            const bootstrapModal = new bootstrap.Modal(modalEl);
-            const searchInput = document.getElementById('componentSearchInput');
-            const listContainer = document.getElementById('componentsList');
+            const modalEl         = document.getElementById('selectionModal');
+            const bootstrapModal  = new bootstrap.Modal(modalEl);
+            const searchInput     = document.getElementById('componentSearchInput');
+            const listContainer   = document.getElementById('componentsList');
+            const searchToggleBtn = document.getElementById('searchToggleBtn');
+            const searchSlideWrap = document.getElementById('searchSlideWrap');
 
             let currentCategory = '';
-            let selectedItems = JSON.parse(localStorage.getItem('pcBuild') || '{}');
+            let selectedItems   = JSON.parse(localStorage.getItem('pcBuild') || '{}');
 
+            // ── Поиск ──────────────────────────────────────────
+            searchToggleBtn.addEventListener('click', () => {
+                const isOpen = searchSlideWrap.classList.toggle('open');
+                searchToggleBtn.classList.toggle('active', isOpen);
+                if (isOpen) setTimeout(() => searchInput.focus(), 350);
+                else { searchInput.value = ''; loadComponents(''); }
+            });
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                searchSlideWrap.classList.remove('open');
+                searchToggleBtn.classList.remove('active');
+                searchInput.value = '';
+            });
+
+            // ── UI ─────────────────────────────────────────────
             function updateUI() {
-                // Render Slots
                 document.querySelectorAll('.slot-item').forEach(slot => {
-                    const cat = slot.dataset.slotCategory;
-                    const item = selectedItems[cat];
-                    const valEl = slot.querySelector('.js-slot-res');
+                    const cat      = slot.dataset.slotCategory;
+                    const item     = selectedItems[cat];
+                    const valEl    = slot.querySelector('.js-slot-res');
                     const clearBtn = slot.querySelector('.btn-clear-slot');
-                    const addBtn = slot.querySelector('.btn-add-modern');
+                    const addBtn   = slot.querySelector('.btn-add-modern');
 
                     if (item) {
                         slot.classList.remove('empty');
                         valEl.textContent = item.name;
-                        valEl.classList.replace('text-white-50', 'text-white');
+                        valEl.classList.replace('text-white-50','text-white');
                         clearBtn.classList.remove('d-none');
                         addBtn.classList.add('d-none');
                     } else {
                         slot.classList.add('empty');
                         valEl.textContent = 'Ожидание выбора...';
-                        valEl.classList.replace('text-white', 'text-white-50');
+                        valEl.classList.replace('text-white','text-white-50');
                         clearBtn.classList.add('d-none');
                         addBtn.classList.remove('d-none');
                     }
                 });
 
-                // Progress
                 const count = Object.keys(selectedItems).length;
                 document.getElementById('selectedCount').textContent = count;
                 document.getElementById('buildProgressBar').style.width = (count / 8 * 100) + '%';
 
-                // Summary & Price
-                const summaryList = document.getElementById('selectedComponentsPrices');
-                let total = 0;
-                let html = '';
-
+                let total = 0, html = '';
                 for (const [cat, item] of Object.entries(selectedItems)) {
                     total += item.selectedPrice;
-                    html += `
-                            <div class="d-flex justify-content-between mb-2 small">
+                    html += `<div class="d-flex justify-content-between mb-2 small">
                                 <span class="text-secondary">${cat}</span>
                                 <span class="fw-bold">${item.selectedPrice.toLocaleString()} ₽</span>
-                            </div>`;
+                             </div>`;
                 }
-                summaryList.innerHTML = html || '<div class="text-muted text-center">Сборка не начата</div>';
+                document.getElementById('selectedComponentsPrices').innerHTML =
+                    html || '<div class="text-muted text-center">Сборка не начата</div>';
                 document.getElementById('totalPriceDisplay').textContent = total.toLocaleString() + ' ₽';
 
                 calculateAnalysis();
                 localStorage.setItem('pcBuild', JSON.stringify(selectedItems));
             }
 
+            // ── Анализ ─────────────────────────────────────────
             function calculateAnalysis() {
                 const cpu = selectedItems['Процессор'];
                 const gpu = selectedItems['Видеокарта'];
                 let balance = 0;
-
                 if (cpu && gpu) {
                     const diff = Math.abs((cpu.powerScore || 0) - (gpu.powerScore || 0));
-                    balance = Math.max(0, 100 - (diff * 5));
+                    balance = Math.max(0, 100 - diff * 5);
                 }
-
                 document.getElementById('efficiencyVal').textContent = Math.round(balance) + '%';
                 document.getElementById('efficiencyFill').style.width = balance + '%';
 
-                // Простая заглушка TDP
-                let totalTdp = Object.values(selectedItems).reduce((sum, i) => sum + (i.tdp || 0), 0);
-                document.getElementById('tdpVal').textContent = totalTdp + 'W';
-                document.getElementById('tdpFill').style.width = Math.min(100, (totalTdp / 850) * 100) + '%';
+                const totalTdp = Object.values(selectedItems).reduce((s, i) => s + (i.tdp || 0), 0);
+                const psu      = selectedItems['Блок питания'];
+                const psuWatts = psu ? (psu.psuWatts || 750) : 750;
+
+                document.getElementById('tdpVal').textContent = totalTdp + 'W / ' + psuWatts + 'W';
+                const pct = Math.min(100, totalTdp / psuWatts * 100);
+                const fill = document.getElementById('tdpFill');
+                fill.style.width      = pct + '%';
+                fill.style.background = pct > 90 ? '#f03e3e' : pct > 70 ? '#f59f00' : 'var(--success)';
             }
 
+            // ── Загрузка ───────────────────────────────────────
             async function loadComponents(term = '') {
-                listContainer.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-accent"></div></div>';
+                listContainer.innerHTML =
+                    '<div class="modal-state-msg"><div class="spinner-border text-accent"></div></div>';
                 try {
-                    const res = await fetch(`?handler=SearchComponents&category=${encodeURIComponent(currentCategory)}&term=${encodeURIComponent(term)}`);
+                    const res  = await fetch(`?handler=SearchComponents&category=${encodeURIComponent(currentCategory)}&term=${encodeURIComponent(term)}`);
                     const data = await res.json();
 
                     if (!data.length) {
-                        listContainer.innerHTML = '<div class="text-center py-5 text-muted">Компоненты не найдены</div>';
+                        listContainer.innerHTML = '<div class="modal-state-msg">Компоненты не найдены</div>';
                         return;
                     }
 
-                    listContainer.innerHTML = data.map(item => `
-                            <div class="result-card-v2">
-                                <div class="result-img-container" style="width: 60px;"><img src="${item.image || '/img/no-image.png'}" class="img-fluid"></div>
-                                <div class="ms-3 flex-grow-1">
-                                    <div class="fw-bold text-white">${item.name}</div>
-                                    <div class="small text-secondary">${item.specs || ''}</div>
-                                    <div class="mt-2">
-                                        ${item.offers.map(o => `
-                                            <div class="offer-item small" onclick="window.selectComp('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${o.price}, ${item.powerScore || 0})">
-                                                <span>${o.description || 'Цена'}</span>
-                                                <span class="text-accent fw-bold">${o.price.toLocaleString()} ₽</span>
-                                            </div>
-                                        `).join('')}
+                    listContainer.innerHTML = data.map(item => {
+                        const offersHtml = (item.offers || []).slice(0, 4).map((o, i) => `
+                            <div class="offer-cell"
+                                 onclick="window.selectComp(
+                                    '${item.id}',
+                                    '${(item.name || '').replace(/'/g, "\\'")}',
+                                    ${o.price},
+                                    ${item.powerScore || 0},
+                                    ${item.tdp || 0},
+                                    ${item.psuWatts || 0})">
+                                <span class="offer-cell-num">Вариант ${i + 1}</span>
+                                <span class="offer-cell-shop">${o.merchantName || 'Магазин'}</span>
+                                <span class="offer-cell-price">${Number(o.price).toLocaleString()} ₽</span>
+                            </div>`).join('');
+
+                        return `
+                            <div class="comp-block">
+                                <div class="comp-block-header">
+                                    <img src="${item.image || '/img/no-image.png'}"
+                                         class="comp-block-img" alt="${item.name}"
+                                         onerror="this.src='/img/no-image.png'">
+                                    <div style="min-width:0">
+                                        <div class="comp-block-name">${item.name}</div>
+                                        ${item.specs ? `<div class="comp-block-specs">${item.specs}</div>` : ''}
                                     </div>
                                 </div>
-                            </div>
-                        `).join('');
+                                <div class="comp-offers-grid">
+                                    ${offersHtml || '<div class="offer-cell text-muted small p-3">Нет предложений</div>'}
+                                </div>
+                            </div>`;
+                    }).join('');
+
                 } catch (e) {
-                    listContainer.innerHTML = '<div class="text-danger text-center py-5">Ошибка загрузки</div>';
+                    listContainer.innerHTML = '<div class="modal-state-msg text-danger">Ошибка загрузки</div>';
                 }
             }
 
-            window.selectComp = (id, name, price, power) => {
-                selectedItems[currentCategory] = { id, name, selectedPrice: price, powerScore: power };
+            // ── Выбор ──────────────────────────────────────────
+            window.selectComp = (id, name, price, power, tdp, psuWatts) => {
+                selectedItems[currentCategory] = {
+                    id, name,
+                    selectedPrice: Number(price),
+                    powerScore: power,
+                    tdp: tdp,
+                    psuWatts: psuWatts
+                };
                 updateUI();
                 bootstrapModal.hide();
             };
 
-            // Event Listeners
+            // ── Клик по слоту ──────────────────────────────────
             document.querySelectorAll('.slot-item').forEach(slot => {
-                slot.addEventListener('click', (e) => {
+                slot.addEventListener('click', e => {
                     if (e.target.closest('.btn-clear-slot')) {
                         delete selectedItems[slot.dataset.slotCategory];
                         updateUI();
@@ -283,6 +337,5 @@
 
             updateUI();
         });
-        // ты чмо лох и вообще бла бла
     </script>
 }

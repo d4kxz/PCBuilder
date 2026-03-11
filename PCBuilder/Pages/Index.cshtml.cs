@@ -18,14 +18,10 @@ namespace PCBuilder.Pages
             _ozonService = ozonService;
         }
 
-        public void OnGet()
-        {
-            // Метод для начальной загрузки страницы
-        }
+        public void OnGet() { }
 
         public async Task<JsonResult> OnGetSearchComponentsAsync(string category, string term)
         {
-            // 1. Поиск в БД с фильтрацией и защитой от регистра
             var query = _context.Components
                 .Include(c => c.Offers)
                 .Where(c => c.Category == category);
@@ -39,31 +35,27 @@ namespace PCBuilder.Pages
             var componentsFromDb = await query.ToListAsync();
             var results = new List<object>();
 
-            // 
-
             foreach (var comp in componentsFromDb)
             {
-                // 2. Получаем живые данные из Ozon
-                // Используем null-coalescing оператор для безопасности
                 var (liveName, livePrice, liveImg) = await _ozonService.GetProductDataAsync(comp.OzonSku ?? "");
 
-                // 3. Формируем предложения
                 var allOffers = comp.Offers?
-                .Select(o => (object)new
-                {
-                merchantName = o.MerchantName,
-                price = o.Price
-                 }).ToList() ?? new List<object>();
-                // Добавляем Ozon, если данные получены успешно
-                if (livePrice > 0)
-                {
-                    allOffers.Insert(0, new { merchantName = "Ozon", price = livePrice });
-                }
+                    .Select(o => (object)new
+                    {
+                        merchantName = o.MerchantName,
+                        price = o.Price
+                    }).ToList() ?? new List<object>();
 
-                // Определяем базовую цену для расчета рейтинга
+                if (livePrice > 0)
+                    allOffers.Insert(0, new { merchantName = "Ozon", price = livePrice });
+
                 decimal minPrice = allOffers.Any()
-    ? allOffers.Min(o => ((dynamic)o).price)
-    : 0;
+                    ? allOffers.Min(o => ((dynamic)o).price)
+                    : 0;
+
+                // TDP — берём из Specs (парсим) или из заранее заданных значений по категории
+                int tdp = EstimateTdp(comp.Category, minPrice);
+                int psuWatts = EstimatePsuWatts(comp.Category, minPrice);
 
                 results.Add(new
                 {
@@ -73,36 +65,55 @@ namespace PCBuilder.Pages
                     image = (livePrice > 0 && !string.IsNullOrEmpty(liveImg)) ? liveImg : (comp.ImageUrl ?? "/img/no-image.png"),
                     specs = comp.Specs ?? "",
                     offers = allOffers,
-                    powerScore = CalculatePowerScore(comp.Category, minPrice)
+                    powerScore = CalculatePowerScore(comp.Category, minPrice),
+                    tdp = tdp,
+                    psuWatts = psuWatts
                 });
             }
 
             return new JsonResult(results);
         }
 
+        // Оценка мощности на основе цены (условная шкала)
         private int CalculatePowerScore(string category, decimal price)
         {
             if (price <= 0) return 0;
-
-            // Логика оценки мощности на основе цены (условная)
             return category switch
             {
                 "Процессор" => Math.Min((int)(price / 700), 100),
-                "Видеокарта" => Math.Min((int)(price / 1500), 100),
-                "Материнская Плата" => Math.Min((int)(price / 300), 100),
-                "Оперативная память" => Math.Min((int)(price / 200), 100),
+                "Видеокарта" => Math.Min((int)(price / 1800), 100),
                 _ => 50
             };
         }
 
-        private string GetTierName(decimal price)
+        // Приблизительный TDP компонента (для нагрузки БП)
+        private int EstimateTdp(string category, decimal price)
         {
+            return category switch
+            {
+                "Процессор" => price > 50000 ? 125 : price > 25000 ? 105 : 65,
+                "Видеокарта" => price > 150000 ? 450 : price > 60000 ? 220 : price > 40000 ? 200 : 150,
+                "Материнская плата" => 50,
+                "Оперативная память" => 10,
+                "Накопитель SSD" => 8,
+                "Охлаждение" => 5,
+                "Корпус" => 0,
+                "Блок питания" => 0,  // сам БП не потребляет — это источник
+                _ => 20
+            };
+        }
+
+        // Мощность БП (только для категории "Блок питания")
+        private int EstimatePsuWatts(string category, decimal price)
+        {
+            if (category != "Блок питания") return 0;
             return price switch
             {
-                > 80000 => "Enthusiast-Tier",
-                > 40000 => "High-Tier",
-                > 20000 => "Mid-Tier",
-                _ => "Entry-Tier"
+                > 23000 => 1000,
+                > 18000 => 850,
+                > 12000 => 750,
+                > 9000 => 650,
+                _ => 550
             };
         }
     }
