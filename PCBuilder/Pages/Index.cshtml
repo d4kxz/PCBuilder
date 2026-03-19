@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model IndexModel
 @{
     ViewData["Title"] = "PC CORE v3 | Professional Configurator";
@@ -104,17 +104,19 @@
                     <div id="totalPriceDisplay" class="total-price text-white">0 ₽</div>
                 </div>
 
-                <button class="btn-primary-modern" id="orderButton">ЗАКАЗАТЬ СБОРКУ</button>
+                <button class="btn-primary-modern mb-2" id="orderButton">ЗАКАЗАТЬ СБОРКУ</button>
+                <button class="btn-save-build w-100" id="saveBuildBtn">
+                    <i class="bi bi-bookmark-plus me-1"></i> Сохранить сборку
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ===== MODAL ===== -->
+<!-- ===== MODAL: Выбор компонента ===== -->
 <div class="modal fade" id="selectionModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content modal-modern text-white">
-
             <div class="modal-header-custom d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-3 flex-grow-1" style="min-width:0">
                     <div class="search-toggle-wrap">
@@ -136,7 +138,6 @@
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-
             <div class="modal-body p-4">
                 <div id="componentsList"
                      class="components-blocks-wrap scroll-slim"
@@ -147,7 +148,53 @@
     </div>
 </div>
 
+<!-- ===== MODAL: Сохранить сборку ===== -->
+<div class="modal fade" id="saveBuildModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+        <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;color:var(--text)">
+            <div class="modal-header" style="border-color:var(--border);padding:16px 20px">
+                <h5 class="modal-title" style="font-family:'Bebas Neue',sans-serif;letter-spacing:.06em;font-size:1.2rem">
+                    <i class="bi bi-bookmark-plus me-2" style="color:var(--accent)"></i>Сохранить сборку
+                </h5>
+                <button type="button" class="btn-close-custom-v2" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label style="font-size:.8rem;color:var(--text-sub);margin-bottom:6px;display:block">
+                        Название сборки
+                    </label>
+                    <input type="text" id="saveBuildName"
+                           placeholder="например, Игровой ПК 2025"
+                           style="width:100%;background:var(--bg-card-2,#f5f5f5);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s"
+                           onfocus="this.style.borderColor='var(--accent)'"
+                           onblur="this.style.borderColor='var(--border)'" />
+                </div>
+                <div id="saveBuildStatus" class="mb-3" style="font-size:.82rem;display:none"></div>
+                <button class="btn-primary-modern" id="saveBuildConfirmBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<style>
+.btn-save-build {
+    background: transparent;
+    border: 1px solid var(--accent, #8B5E3C);
+    border-radius: 8px;
+    color: var(--accent, #8B5E3C);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: .95rem; letter-spacing: .08em;
+    padding: 10px 16px; cursor: pointer;
+    transition: background .2s, color .2s, box-shadow .2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-save-build:hover {
+    background: var(--accent-light, rgba(139,94,60,0.12));
+    box-shadow: 0 0 0 2px var(--accent-glow, rgba(139,94,60,0.3));
+}
+</style>
 
 @section Scripts {
     <script>
@@ -187,13 +234,13 @@
                     if (item) {
                         slot.classList.remove('empty');
                         valEl.textContent = item.name;
-                        valEl.classList.replace('text-white-50','text-white');
+                        valEl.classList.replace('text-white-50', 'text-white');
                         clearBtn.classList.remove('d-none');
                         addBtn.classList.add('d-none');
                     } else {
                         slot.classList.add('empty');
                         valEl.textContent = 'Ожидание выбора...';
-                        valEl.classList.replace('text-white','text-white-50');
+                        valEl.classList.replace('text-white', 'text-white-50');
                         clearBtn.classList.add('d-none');
                         addBtn.classList.remove('d-none');
                     }
@@ -236,13 +283,13 @@
                 const psuWatts = psu ? (psu.psuWatts || 750) : 750;
 
                 document.getElementById('tdpVal').textContent = totalTdp + 'W / ' + psuWatts + 'W';
-                const pct = Math.min(100, totalTdp / psuWatts * 100);
+                const pct  = Math.min(100, totalTdp / psuWatts * 100);
                 const fill = document.getElementById('tdpFill');
                 fill.style.width      = pct + '%';
                 fill.style.background = pct > 90 ? '#f03e3e' : pct > 70 ? '#f59f00' : 'var(--success)';
             }
 
-            // ── Загрузка ───────────────────────────────────────
+            // ── Загрузка компонентов ───────────────────────────
             async function loadComponents(term = '') {
                 listContainer.innerHTML =
                     '<div class="modal-state-msg"><div class="spinner-border text-accent"></div></div>';
@@ -264,7 +311,10 @@
                                     ${o.price},
                                     ${item.powerScore || 0},
                                     ${item.tdp || 0},
-                                    ${item.psuWatts || 0})">
+                                    ${item.psuWatts || 0},
+                                    '${(o.productUrl || '').replace(/'/g, "\\'")}',
+                                    '${(o.merchantName || '').replace(/'/g, "\\'")}',
+                                    '${(item.image || '').replace(/'/g, "\\'")}')">
                                 <span class="offer-cell-num">Вариант ${i + 1}</span>
                                 <span class="offer-cell-shop">${o.merchantName || 'Магазин'}</span>
                                 <span class="offer-cell-price">${Number(o.price).toLocaleString()} ₽</span>
@@ -292,14 +342,17 @@
                 }
             }
 
-            // ── Выбор ──────────────────────────────────────────
-            window.selectComp = (id, name, price, power, tdp, psuWatts) => {
+            // ── Выбор компонента ───────────────────────────────
+            window.selectComp = (id, name, price, power, tdp, psuWatts, productUrl, merchantName, image) => {
                 selectedItems[currentCategory] = {
                     id, name,
                     selectedPrice: Number(price),
-                    powerScore: power,
-                    tdp: tdp,
-                    psuWatts: psuWatts
+                    powerScore:    power,
+                    tdp:           tdp,
+                    psuWatts:      psuWatts,
+                    productUrl:    productUrl || '',
+                    merchantName:  merchantName || '',
+                    image:         image || ''
                 };
                 updateUI();
                 bootstrapModal.hide();
@@ -326,6 +379,7 @@
                 debounce = setTimeout(() => loadComponents(searchInput.value), 400);
             });
 
+            // ── Заказать ───────────────────────────────────────
             document.getElementById('orderButton').addEventListener('click', () => {
                 if (Object.keys(selectedItems).length < 8) {
                     alert('Пожалуйста, выберите все компоненты перед заказом.');
@@ -333,6 +387,81 @@
                 }
                 alert('Заказ сформирован! Проверьте консоль.');
                 console.log(selectedItems);
+            });
+
+            // ── Сохранить сборку ───────────────────────────────
+            const saveBuildModal = new bootstrap.Modal(document.getElementById('saveBuildModal'));
+
+            document.getElementById('saveBuildBtn').addEventListener('click', () => {
+                if (Object.keys(selectedItems).length === 0) {
+                    alert('Сначала добавьте хотя бы один компонент');
+                    return;
+                }
+                document.getElementById('saveBuildName').value = '';
+                document.getElementById('saveBuildStatus').style.display = 'none';
+                saveBuildModal.show();
+                setTimeout(() => document.getElementById('saveBuildName').focus(), 300);
+            });
+
+            document.getElementById('saveBuildConfirmBtn').addEventListener('click', async () => {
+                const name     = document.getElementById('saveBuildName').value.trim();
+                const statusEl = document.getElementById('saveBuildStatus');
+
+                if (!name) {
+                    statusEl.style.display = 'block';
+                    statusEl.style.color   = 'var(--danger, #b84c4c)';
+                    statusEl.textContent   = 'Введите название сборки';
+                    return;
+                }
+
+                const caseItem     = selectedItems['Корпус'];
+                const caseImageUrl = caseItem?.image || null;
+                const total        = Object.values(selectedItems).reduce((s, i) => s + (i.selectedPrice || 0), 0);
+
+                const btn = document.getElementById('saveBuildConfirmBtn');
+                btn.disabled    = true;
+                btn.textContent = 'Сохраняю...';
+
+                try {
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    const res   = await fetch('/Account/Profile?handler=SaveBuild', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({
+                            name:         name,
+                            totalPrice:   total,
+                            buildJson:    JSON.stringify(selectedItems),
+                            caseImageUrl: caseImageUrl
+                        })
+                    });
+
+                    const data = await res.json();
+
+                    if (data.ok) {
+                        statusEl.style.display = 'block';
+                        statusEl.style.color   = '#4a7c59';
+                        statusEl.textContent   = '✓ Сборка сохранена!';
+                        setTimeout(() => saveBuildModal.hide(), 1200);
+                    } else if (res.status === 401) {
+                        statusEl.style.display = 'block';
+                        statusEl.style.color   = 'var(--danger, #b84c4c)';
+                        statusEl.textContent   = 'Войдите в аккаунт чтобы сохранять сборки';
+                    } else {
+                        statusEl.style.display = 'block';
+                        statusEl.style.color   = 'var(--danger, #b84c4c)';
+                        statusEl.textContent   = data.error || 'Ошибка сохранения';
+                    }
+                } catch (e) {
+                    statusEl.style.display = 'block';
+                    statusEl.style.color   = 'var(--danger, #b84c4c)';
+                    statusEl.textContent   = 'Ошибка сети';
+                } finally {
+                    btn.disabled    = false;
+                    btn.textContent = 'Сохранить';
+                }
             });
 
             updateUI();

@@ -1,43 +1,193 @@
-﻿<!DOCTYPE html>
-<html lang="ru">
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - PC CORE</title>
+    <title>@ViewData["Title"]</title>
 
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/theme.css" />
+
+    <style>
+        body { background: var(--bg) !important; color: var(--text) !important; }
+        .modal-content { background: var(--bg-card) !important; color: var(--text) !important; }
+        .text-white-50 { color: var(--text-muted) !important; }
+        .text-white    { color: var(--text) !important; }
+        .text-secondary{ color: var(--text-sub) !important; }
+        .text-muted    { color: var(--text-muted) !important; }
+        .text-danger   { color: var(--danger) !important; }
+        .bg-dark       { background: var(--bg-card-2) !important; }
+        .border-secondary { border-color: var(--border) !important; }
+        .badge.bg-dark { background: var(--bg-card-2) !important; color: var(--text-sub) !important; }
+        .badge.bg-primary { background: var(--accent) !important; color: #fff !important; }
+        .badge.bg-secondary { background: var(--bg-card-2) !important; color: var(--text-muted) !important; }
+        .spinner-border { color: var(--accent) !important; }
+        .form-check-input:checked { background-color: var(--accent) !important; border-color: var(--accent) !important; }
+
+        /* ── НАВИГАЦИЯ ──────────────────────────────────────── */
+        .top-navbar {
+            position: sticky; top: 0; z-index: 1000;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            height: 58px;
+            display: flex; align-items: center;
+            padding: 0 24px; gap: 16px;
+            transition: background .3s, border-color .3s;
+        }
+
+        .top-navbar-logo {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; flex-shrink: 0;
+        }
+        .top-navbar-logo img {
+            height: 32px; width: auto;
+            transition: filter .3s;
+        }
+        [data-theme="dark"] .top-navbar-logo img {
+            filter: invert(1) brightness(0.85);
+        }
+
+        .top-navbar-links {
+            display: flex; align-items: center; gap: 2px;
+            flex: 1;
+        }
+        .top-nav-link {
+            font-size: .78rem; font-weight: 500;
+            letter-spacing: .05em; text-transform: uppercase;
+            color: var(--text-sub); text-decoration: none;
+            padding: 6px 12px; border-radius: 6px;
+            transition: color .15s, background .15s;
+        }
+        .top-nav-link:hover, .top-nav-link.active {
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        /* Иконка профиля */
+        .top-navbar-profile {
+            display: flex; align-items: center; gap: 8px;
+            flex-shrink: 0;
+        }
+        .btn-profile-icon {
+            background: var(--accent-light);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 1rem;
+            text-decoration: none;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .btn-profile-icon:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+            color: var(--accent);
+        }
+        .btn-login-link {
+            font-size: .78rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .05em;
+            color: var(--accent); text-decoration: none;
+            padding: 6px 12px; border: 1px solid var(--accent);
+            border-radius: 7px;
+            transition: background .15s, color .15s;
+        }
+        .btn-login-link:hover {
+            background: var(--accent); color: #fff;
+        }
+
+        /* ── Плавающий переключатель темы (нижний правый угол) ── */
+        .theme-float-btn {
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.05rem;
+            color: var(--text-sub);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+            transition: border-color .2s, color .2s, box-shadow .2s, transform .15s;
+        }
+        .theme-float-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.15);
+            transform: scale(1.08);
+        }
+    </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <div class="neon-background-container"></div>
+<body>
 
-    <div class="accent-line"></div>
+    <!-- ── НАВИГАЦИЯ ──────────────────────────────────────────── -->
+    <nav class="top-navbar">
+        <a href="/" class="top-navbar-logo">
+            <img src="~/img/logo.png" alt="Logo" />
+        </a>
 
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-dark border-bottom border-white border-opacity-10 py-3">
-            <div class="container">
-                <a class="navbar-brand fw-bold d-flex align-items-center" asp-page="/Index">
-                    <span class="brand-dot me-2"></span> PC<span class="text-accent">CORE</span>
+        <div class="top-navbar-links">
+            <a href="/" class="top-nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")">
+                Конфигуратор
+            </a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a href="/Admin/DataSources" class="top-nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Admin") == true ? "active" : "")">
+                    Источники
                 </a>
-            </div>
-        </nav>
-    </header>
+            }
+        </div>
 
-    <main role="main" class="flex-grow-1 container py-5">
+        <!-- Профиль / Вход -->
+        <div class="top-navbar-profile">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a href="/Account/Profile" class="btn-profile-icon" title="Личный кабинет">
+                    <i class="bi bi-person-fill"></i>
+                </a>
+            }
+            else
+            {
+                <a href="/Account/Login" class="btn-login-link">Войти</a>
+            }
+        </div>
+    </nav>
+
+    <!-- ── КОНТЕНТ ─────────────────────────────────────────────── -->
+    <main>
         @RenderBody()
     </main>
 
-    <footer class="py-3 border-top border-white border-opacity-10">
-        <div class="container text-center">
-            <span class="text-muted small">© 2026 PC-CORE Architecture Engine</span>
-        </div>
-    </footer>
+    <!-- ── Плавающий переключатель темы ───────────────────────── -->
+    <button class="theme-float-btn" id="themeToggleBtn" title="Сменить тему">
+        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+    </button>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+    // ── Тема ──────────────────────────────────────────────────────
+    (function () {
+        const saved = localStorage.getItem('pcTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', saved);
+        updateThemeIcon(saved);
+    })();
+
+    function updateThemeIcon(theme) {
+        const icon = document.getElementById('themeIcon');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    }
+
+    document.getElementById('themeToggleBtn')?.addEventListener('click', () => {
+        const html    = document.documentElement;
+        const current = html.getAttribute('data-theme') || 'light';
+        const next    = current === 'light' ? 'dark' : 'light';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('pcTheme', next);
+        updateThemeIcon(next);
+    });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

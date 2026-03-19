@@ -1,36 +1,61 @@
+// ══════════════════════════════════════════════════════════════
+//  Дополнительные NuGet пакеты для Identity:
+//  dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore
+// ══════════════════════════════════════════════════════════════
+
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PCBuilder.Data;
+using PCBuilder.Services;
 using PCBuilder.Services.API;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorPages()
-    .AddRazorRuntimeCompilation();
-builder.Services.AddDbContext<ApplicationContext>(options =>
-options.UseSqlite("Data Source=pc_builder.db"));
+builder.Services.AddRazorPages();
 
-builder.Services.AddHttpClient<Ozon>();
+// ── База данных ──────────────────────────────────────────────
+builder.Services.AddDbContext<ApplicationContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
+                      ?? "Data Source=pcbuilder.db"));
+
+// ── Identity ─────────────────────────────────────────────────
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+{
+    options.Password.RequireDigit           = false;
+    options.Password.RequireUppercase       = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength         = 6;
+    options.SignIn.RequireConfirmedAccount  = false; // без подтверждения email
+})
+.AddEntityFrameworkStores<ApplicationContext>();
+
+// Куда редиректить если не залогинен
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath  = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+});
+
+// ── Остальные сервисы ─────────────────────────────────────────
 builder.Services.AddScoped<Ozon>();
+builder.Services.AddSingleton<DataSourceManager>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseRouting();
 
+app.UseAuthentication(); // ← ОБЯЗАТЕЛЬНО перед UseAuthorization
 app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();

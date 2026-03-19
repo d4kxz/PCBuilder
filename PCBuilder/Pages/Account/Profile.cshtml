@@ -1,0 +1,351 @@
+@page
+@model PCBuilder.Pages.Account.ProfileModel
+@using System.Text.Json
+@{ ViewData["Title"] = "Личный кабинет"; }
+
+<div class="container py-5">
+
+    <!-- Шапка профиля -->
+    <div class="profile-header mb-5">
+        <div class="profile-avatar">
+            <i class="bi bi-person-fill"></i>
+        </div>
+        <div>
+            <h1 class="profile-name">@Model.UserName</h1>
+            <p class="profile-email">@Model.Email</p>
+        </div>
+        <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
+            <button class="btn-profile-action" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                <i class="bi bi-pencil me-1"></i> Редактировать
+            </button>
+            <form method="post" asp-page-handler="Logout" style="margin:0">
+                <button type="submit" class="btn-profile-action danger">
+                    <i class="bi bi-box-arrow-right me-1"></i> Выйти
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Сборки -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="section-heading">Мои сборки <span class="builds-count">@Model.Builds.Count</span></h2>
+    </div>
+
+    @if (!Model.Builds.Any())
+    {
+        <div class="builds-empty">
+            <i class="bi bi-cpu"></i>
+            <div class="fw-semibold mb-1">Сборок пока нет</div>
+            <div class="small mb-3">Составь конфигурацию и нажми «Сохранить сборку»</div>
+            <a href="/" class="btn-go-build">Перейти к конфигуратору</a>
+        </div>
+    }
+    else
+    {
+        <div class="builds-grid">
+            @foreach (var build in Model.Builds)
+            {
+                <div class="build-card">
+                    <!-- Фото корпуса -->
+                    <div class="build-card-img">
+                        @if (!string.IsNullOrEmpty(build.CaseImageUrl))
+                        {
+                            <img src="@build.CaseImageUrl" alt="Корпус" onerror="this.style.display='none'" />
+                        }
+                        <div class="build-card-img-fallback">
+                            <i class="bi bi-pc-display"></i>
+                        </div>
+                    </div>
+
+                    <!-- Контент -->
+                    <div class="build-card-body">
+                        <div class="build-card-name">@build.Name</div>
+                        <div class="build-card-date">@build.CreatedAt.ToString("dd.MM.yyyy")</div>
+                        <div class="build-card-price">@build.TotalPrice.ToString("N0") ₽</div>
+                        <div class="build-card-actions">
+                            <a href="#" class="build-details-link"
+                               onclick="showBuildDetails(@build.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(build.BuildJson)'); return false;">
+                                Подробности
+                            </a>
+                            <button class="build-delete-btn"
+                                    onclick="deleteBuild(@build.Id, this)"
+                                    title="Удалить сборку">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- ── Модалка редактирования профиля ─────────────────────── -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;color:var(--text)">
+            <div class="modal-header" style="border-color:var(--border)">
+                <h5 class="modal-title" style="font-family:'Bebas Neue',sans-serif;letter-spacing:.06em">Редактировать профиль</h5>
+                <button type="button" class="btn-close-custom-v2" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="post" asp-page-handler="UpdateProfile">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:.8rem;color:var(--text-sub)">Имя пользователя</label>
+                        <input name="newUserName" value="@Model.UserName" class="auth-input" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:.8rem;color:var(--text-sub)">Новый пароль (оставьте пустым если не меняете)</label>
+                        <input name="newPassword" type="password" class="auth-input" placeholder="••••••" />
+                    </div>
+                    <button type="submit" class="auth-btn">Сохранить</button>
+                </form>
+                @if (Model.UpdateMessage != null)
+                {
+                    <div class="mt-3" style="font-size:.85rem;color:var(--success)">@Model.UpdateMessage</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Модалка подробностей сборки ────────────────────────── -->
+<div class="modal fade" id="buildDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;color:var(--text)">
+            <div class="modal-header" style="border-color:var(--border);padding:16px 20px">
+                <div>
+                    <h5 class="modal-title" id="buildDetailsTitle" style="font-family:'Bebas Neue',sans-serif;letter-spacing:.06em;font-size:1.3rem"></h5>
+                    <div id="buildDetailsTotalPrice" style="font-size:.85rem;color:var(--text-sub)"></div>
+                </div>
+                <button type="button" class="btn-close-custom-v2" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-body p-4" id="buildDetailsBody" style="max-height:65vh;overflow-y:auto">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── Шапка профиля ─────────────────────────────────────────── */
+.profile-header {
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.profile-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--accent-light, rgba(139,94,60,0.12));
+    border: 2px solid var(--accent, #8B5E3C);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: var(--accent, #8B5E3C);
+    flex-shrink: 0;
+}
+.profile-name { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:.06em; color:var(--text); margin:0; }
+.profile-email { font-size:.85rem; color:var(--text-sub); margin:2px 0 0; }
+
+.btn-profile-action {
+    background: var(--bg-card-2, #f5f5f5);
+    border: 1px solid var(--border, #e0e0e0);
+    border-radius: 8px; color: var(--text-sub);
+    font-size: .82rem; padding: 7px 14px; cursor: pointer;
+    display: inline-flex; align-items: center;
+    transition: border-color .15s, color .15s;
+    text-decoration: none;
+}
+.btn-profile-action:hover { border-color: var(--accent); color: var(--accent); }
+.btn-profile-action.danger:hover { border-color: var(--danger, #b84c4c); color: var(--danger, #b84c4c); }
+
+/* ── Заголовок секции ──────────────────────────────────────── */
+.section-heading {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
+    letter-spacing: .06em; color: var(--text); margin: 0;
+    display: flex; align-items: center; gap: 10px;
+}
+.builds-count {
+    background: var(--accent-light); color: var(--accent);
+    border-radius: 20px; font-size: .75rem; padding: 2px 10px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600;
+}
+
+/* ── Пустое состояние ──────────────────────────────────────── */
+.builds-empty {
+    text-align: center; padding: 60px 20px;
+    border: 1px dashed var(--border); border-radius: 14px;
+    color: var(--text-muted);
+}
+.builds-empty i { font-size: 2.5rem; display: block; margin-bottom: 12px; color: var(--accent); }
+.btn-go-build {
+    display: inline-block; background: var(--accent); color: #fff;
+    border-radius: 8px; padding: 9px 20px;
+    font-family: 'Bebas Neue', sans-serif; font-size: .95rem; letter-spacing: .08em;
+    text-decoration: none; transition: opacity .2s;
+}
+.btn-go-build:hover { opacity: .85; color: #fff; }
+
+/* ── Сетка карточек ────────────────────────────────────────── */
+.builds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+/* ── Карточка сборки (высота > ширины) ─────────────────────── */
+.build-card {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border, #e0e0e0);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: border-color .2s, box-shadow .2s;
+    cursor: default;
+}
+.build-card:hover {
+    border-color: var(--accent, #8B5E3C);
+    box-shadow: 0 4px 20px var(--accent-glow, rgba(139,94,60,0.15));
+}
+
+/* Фото — занимает ~55% высоты карточки */
+.build-card-img {
+    position: relative;
+    aspect-ratio: 3/4; /* выше чем широкий — как карточки WB/Ozon */
+    background: var(--bg-card-2, #f5f5f5);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+}
+.build-card-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    position: absolute; inset: 0;
+}
+.build-card-img-fallback {
+    font-size: 3rem; color: var(--border, #e0e0e0);
+    z-index: 0;
+}
+.build-card-img img + .build-card-img-fallback { display: none; }
+
+/* Тело карточки */
+.build-card-body {
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 4px;
+    flex: 1;
+}
+.build-card-name {
+    font-size: .88rem; font-weight: 600;
+    color: var(--text); line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.build-card-date { font-size: .72rem; color: var(--text-muted); }
+.build-card-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.25rem; color: var(--accent);
+    letter-spacing: .03em; margin-top: 4px;
+}
+.build-card-actions {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+.build-details-link {
+    font-size: .8rem; color: var(--accent);
+    text-decoration: none; font-weight: 500;
+}
+.build-details-link:hover { text-decoration: underline; }
+.build-delete-btn {
+    background: none; border: none; color: var(--text-muted);
+    font-size: .82rem; cursor: pointer; padding: 2px 6px; border-radius: 5px;
+    transition: color .15s, background .15s;
+}
+.build-delete-btn:hover { color: var(--danger, #b84c4c); background: rgba(184,76,76,.08); }
+
+/* ── Детали сборки в модалке ───────────────────────────────── */
+.detail-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    gap: 12px;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-cat { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); min-width: 130px; }
+.detail-name { font-size: .88rem; color: var(--text); flex: 1; }
+.detail-price { font-size: .9rem; font-weight: 600; color: var(--accent); white-space: nowrap; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; }
+.detail-link { color: var(--accent); font-size: .75rem; flex-shrink: 0; }
+.detail-link:hover { opacity: .8; }
+
+/* Инпут стили для формы в модалке */
+.auth-input { width:100%; background:var(--bg-card-2,#f5f5f5); border:1px solid var(--border,#e0e0e0); border-radius:8px; color:var(--text,#1a1a1a); padding:10px 14px; font-size:.9rem; font-family:'DM Sans',sans-serif; outline:none; transition:border-color .2s,box-shadow .2s; }
+.auth-input:focus { border-color:var(--accent,#8B5E3C); box-shadow:0 0 0 3px var(--accent-glow,rgba(139,94,60,0.15)); }
+.auth-btn { width:100%; background:var(--accent,#8B5E3C); border:none; border-radius:8px; color:#fff; font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:.1em; padding:13px; cursor:pointer; transition:opacity .2s; }
+.auth-btn:hover { opacity:.9; }
+</style>
+
+@section Scripts {
+<script>
+// ── Показать детали сборки ───────────────────────────────────
+function showBuildDetails(id, buildJsonStr) {
+    let build;
+    try { build = JSON.parse(buildJsonStr); } catch { return; }
+
+    // Заголовок и цена
+    const title = document.getElementById('buildDetailsTitle');
+    const priceEl = document.getElementById('buildDetailsTotalPrice');
+    const body = document.getElementById('buildDetailsBody');
+
+    // Имя берём из карточки
+    title.textContent = document.querySelector(`[data-build-id="${id}"]`)?.dataset.buildName || 'Сборка';
+
+    let total = 0;
+    let html  = '';
+
+    const cats = ['Процессор','Материнская плата','Видеокарта','Оперативная память','Накопитель SSD','Блок питания','Корпус','Охлаждение'];
+
+    for (const cat of cats) {
+        const item = build[cat];
+        if (!item) continue;
+        total += item.selectedPrice || 0;
+
+        const shopBadge = item.merchantName
+            ? `<span style="font-size:.7rem;color:var(--text-muted);margin-left:4px">${item.merchantName}</span>`
+            : '';
+
+        const linkBtn = item.productUrl
+            ? `<a href="${item.productUrl}" target="_blank" rel="noopener" class="detail-link" title="Открыть в магазине">
+                   <i class="bi bi-box-arrow-up-right"></i>
+               </a>`
+            : '';
+
+        html += `
+            <div class="detail-row">
+                <span class="detail-cat">${cat}</span>
+                <span class="detail-name">${item.name || '—'}${shopBadge}</span>
+                <span class="detail-price">${(item.selectedPrice || 0).toLocaleString()} ₽</span>
+                ${linkBtn}
+            </div>`;
+    }
+
+    priceEl.textContent = 'Итого: ' + total.toLocaleString() + ' ₽';
+    body.innerHTML = html || '<div class="text-muted text-center py-4">Состав сборки не найден</div>';
+
+    new bootstrap.Modal(document.getElementById('buildDetailsModal')).show();
+}
+
+// ── Удалить сборку ───────────────────────────────────────────
+async function deleteBuild(id, btn) {
+    if (!confirm('Удалить эту сборку?')) return;
+    btn.disabled = true;
+    try {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        const res = await fetch(`?handler=DeleteBuild&id=${id}`, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': token }
+        });
+        if (res.ok) {
+            btn.closest('.build-card').remove();
+            // Обновляем счётчик
+            const counter = document.querySelector('.builds-count');
+            if (counter) counter.textContent = parseInt(counter.textContent) - 1;
+        }
+    } catch(e) {
+        btn.disabled = false;
+        alert('Ошибка удаления');
+    }
+}
+</script>
+}
