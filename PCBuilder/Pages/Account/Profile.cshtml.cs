@@ -9,6 +9,7 @@ using PCBuilder.Models;
 namespace PCBuilder.Pages.Account
 {
     [Authorize] // только для залогиненных
+    [IgnoreAntiforgeryToken]
     public class ProfileModel : PageModel
     {
         private readonly ApplicationContext  _db;

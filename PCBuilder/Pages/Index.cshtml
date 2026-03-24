@@ -303,36 +303,45 @@
                     }
 
                     listContainer.innerHTML = data.map(item => {
-                        const offersHtml = (item.offers || []).slice(0, 4).map((o, i) => `
-                            <div class="offer-cell"
-                                 onclick="window.selectComp(
-                                    '${item.id}',
-                                    '${(item.name || '').replace(/'/g, "\\'")}',
-                                    ${o.price},
-                                    ${item.powerScore || 0},
-                                    ${item.tdp || 0},
-                                    ${item.psuWatts || 0},
-                                    '${(o.productUrl || '').replace(/'/g, "\\'")}',
-                                    '${(o.merchantName || '').replace(/'/g, "\\'")}',
-                                    '${(item.image || '').replace(/'/g, "\\'")}')">
-                                <span class="offer-cell-num">Вариант ${i + 1}</span>
-                                <span class="offer-cell-shop">${o.merchantName || 'Магазин'}</span>
-                                <span class="offer-cell-price">${Number(o.price).toLocaleString()} ₽</span>
-                            </div>`).join('');
+                        const price    = Number(item.price) || 0;
+                        const safeName = (item.name  || '').replace(/'/g, "\\'");
+                        const safeImg  = (item.image || '').replace(/'/g, "\\'");
+
+                        const stockBadge = item.inStock
+                            ? `<span style="font-size:.68rem;color:var(--success);font-weight:600">● В наличии</span>`
+                            : `<span style="font-size:.68rem;color:var(--danger);font-weight:600">● Нет в наличии</span>`;
+
+                        const priceBlock = price > 0
+                            ? `<div class="offer-cell-price">${price.toLocaleString()} ₽</div>`
+                            : `<div style="font-size:.8rem;color:#6c757d">—</div>`;
 
                         return `
-                            <div class="comp-block">
-                                <div class="comp-block-header">
-                                    <img src="${item.image || '/img/no-image.png'}"
-                                         class="comp-block-img" alt="${item.name}"
-                                         onerror="this.src='/img/no-image.png'">
-                                    <div style="min-width:0">
-                                        <div class="comp-block-name">${item.name}</div>
-                                        ${item.specs ? `<div class="comp-block-specs">${item.specs}</div>` : ''}
+                            <div class="comp-block ${item.inStock ? '' : 'opacity-50'}"
+                                 style="cursor:${item.inStock ? 'pointer' : 'not-allowed'}"
+                                 ${item.inStock ? `onclick="window.selectComp(
+                                    '${item.id}',
+                                    '${safeName}',
+                                    ${price},
+                                    ${item.powerScore || 0},
+                                    ${item.tdp        || 0},
+                                    ${item.psuWatts   || 0},
+                                    '${item.socket    || ''}',
+                                    '${item.ramType   || ''}',
+                                    '${safeImg}')"` : ''}>
+                                <div class="comp-block-header" style="justify-content:space-between">
+                                    <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">
+                                        <img src="${item.image || ''}"
+                                             class="comp-block-img" alt="${item.name}"
+                                             onerror="this.style.display='none'">
+                                        <div style="min-width:0">
+                                            <div class="comp-block-name">${item.name}</div>
+                                            ${item.specs ? `<div class="comp-block-specs">${item.specs}</div>` : ''}
+                                            <div style="margin-top:4px">${stockBadge}</div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="comp-offers-grid">
-                                    ${offersHtml || '<div class="offer-cell text-muted small p-3">Нет предложений</div>'}
+                                    <div style="text-align:right;flex-shrink:0;padding-left:16px">
+                                        ${priceBlock}
+                                    </div>
                                 </div>
                             </div>`;
                     }).join('');
@@ -343,16 +352,16 @@
             }
 
             // ── Выбор компонента ───────────────────────────────
-            window.selectComp = (id, name, price, power, tdp, psuWatts, productUrl, merchantName, image) => {
+            window.selectComp = (id, name, price, power, tdp, psuWatts, socket, ramType, image) => {
                 selectedItems[currentCategory] = {
                     id, name,
                     selectedPrice: Number(price),
                     powerScore:    power,
                     tdp:           tdp,
                     psuWatts:      psuWatts,
-                    productUrl:    productUrl || '',
-                    merchantName:  merchantName || '',
-                    image:         image || ''
+                    socket:        socket   || '',
+                    ramType:       ramType  || '',
+                    image:         image    || ''
                 };
                 updateUI();
                 bootstrapModal.hide();

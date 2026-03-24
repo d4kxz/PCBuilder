@@ -1,13 +1,7 @@
-// ══════════════════════════════════════════════════════════════
-//  Дополнительные NuGet пакеты для Identity:
-//  dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore
-// ══════════════════════════════════════════════════════════════
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PCBuilder.Data;
-using PCBuilder.Services;
-using PCBuilder.Services.API;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,24 +15,22 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
 // ── Identity ─────────────────────────────────────────────────
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    options.Password.RequireDigit           = false;
-    options.Password.RequireUppercase       = false;
+    options.Password.RequireDigit = false;
+    options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength         = 6;
-    options.SignIn.RequireConfirmedAccount  = false; // без подтверждения email
+    options.Password.RequiredLength = 6;
+    options.SignIn.RequireConfirmedAccount = false; // без подтверждения email
 })
 .AddEntityFrameworkStores<ApplicationContext>();
 
 // Куда редиректить если не залогинен
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath  = "/Account/Login";
+    options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
 });
 
 // ── Остальные сервисы ─────────────────────────────────────────
-builder.Services.AddScoped<Ozon>();
-builder.Services.AddSingleton<DataSourceManager>();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
