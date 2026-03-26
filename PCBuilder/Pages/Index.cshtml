@@ -68,7 +68,7 @@
 
         <div class="col-lg-4">
             <div class="summary-panel">
-                <h5 class="fw-bold mb-4">Детализация <span class="badge bg-dark text-accent ms-2 border border-secondary">v3.5</span></h5>
+                <h5 class="fw-bold mb-4">Детализация</h5>
 
                 <div id="selectedComponentsPrices" class="summary-list mb-4"></div>
 
@@ -108,6 +108,9 @@
                 <button class="btn-save-build w-100" id="saveBuildBtn">
                     <i class="bi bi-bookmark-plus me-1"></i> Сохранить сборку
                 </button>
+                <button class="btn-clear-all w-100 mt-2" id="clearAllBtn">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Очистить всё
+                </button>
             </div>
         </div>
     </div>
@@ -138,11 +141,79 @@
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <div class="modal-body p-4">
-                <div id="componentsList"
-                     class="components-blocks-wrap scroll-slim"
-                     style="max-height: 65vh; overflow-y: auto; padding-right: 4px;">
+            <div class="modal-body-with-filters">
+
+                <!-- ── ФИЛЬТРЫ (слева) ───────────────────────── -->
+                <div class="filters-panel scroll-slim" id="filtersPanel">
+
+                    <button class="filter-reset-btn mb-2" id="resetFiltersBtn">
+                        <i class="bi bi-x-circle me-1"></i> Сбросить фильтры
+                    </button>
+
+                    <!-- НАЛИЧИЕ -->
+                    <div class="filter-group open">
+                        <div class="filter-group-header" onclick="toggleFilterGroup(this)">
+                            Наличие <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="filter-group-body">
+                            <label class="filter-option">
+                                <input type="checkbox" id="f_instock" onchange="applyFilters()"> В наличии
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" id="f_order" onchange="applyFilters()"> Под заказ
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- ЦЕНА -->
+                    <div class="filter-group open">
+                        <div class="filter-group-header" onclick="toggleFilterGroup(this)">
+                            Цена <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="filter-group-body">
+                            <label class="filter-option">
+                                <input type="radio" name="priceRange" value="0-5000" onchange="applyFilters()"> Менее 5 000 ₽
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="priceRange" value="5001-8000" onchange="applyFilters()"> 5 001 — 8 000 ₽
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="priceRange" value="8001-14000" onchange="applyFilters()"> 8 001 — 14 000 ₽
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="priceRange" value="14001-26000" onchange="applyFilters()"> 14 001 — 26 000 ₽
+                            </label>
+                            <label class="filter-option">
+                                <input type="radio" name="priceRange" value="26000-99999999" onchange="applyFilters()"> 26 000 ₽ и выше
+                            </label>
+                            <div class="price-range-inputs mt-2">
+                                <input type="number" class="price-range-input" id="f_price_from" placeholder="от" min="0" oninput="applyFilters()">
+                                <input type="number" class="price-range-input" id="f_price_to"   placeholder="до" min="0" oninput="applyFilters()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- БРЕНД -->
+                    <div class="filter-group open">
+                        <div class="filter-group-header" onclick="toggleFilterGroup(this)">
+                            Бренд <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="filter-group-body" id="f_brands_list">
+                            <!-- заполняется динамически -->
+                        </div>
+                    </div>
+
+                    <!-- ХАРАКТЕРИСТИКИ (динамически по категории) -->
+                    <div id="f_specs_groups">
+                        <!-- заполняется динамически -->
+                    </div>
+
                 </div>
+
+                <!-- ── СПИСОК КОМПОНЕНТОВ (справа) ──────────── -->
+                <div class="components-list-wrap scroll-slim" id="componentsList">
+                </div>
+
             </div>
         </div>
     </div>
@@ -181,18 +252,31 @@
 <style>
 .btn-save-build {
     background: transparent;
-    border: 1px solid var(--accent, #8B5E3C);
+    border: 1px solid var(--accent, #4dabf7);
     border-radius: 8px;
-    color: var(--accent, #8B5E3C);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: .95rem; letter-spacing: .08em;
+    color: var(--accent, #4dabf7);
+    font-size: .95rem;
     padding: 10px 16px; cursor: pointer;
     transition: background .2s, color .2s, box-shadow .2s;
     display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .btn-save-build:hover {
-    background: var(--accent-light, rgba(139,94,60,0.12));
-    box-shadow: 0 0 0 2px var(--accent-glow, rgba(139,94,60,0.3));
+    background: rgba(77,171,247,0.1);
+    box-shadow: 0 0 0 2px rgba(77,171,247,0.3);
+}
+.btn-clear-all {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: var(--text-secondary, #94a3b8);
+    font-size: .85rem;
+    padding: 8px 16px; cursor: pointer;
+    transition: border-color .2s, color .2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-clear-all:hover {
+    border-color: var(--danger, #ef4444);
+    color: var(--danger, #ef4444);
 }
 </style>
 
@@ -202,7 +286,6 @@
             const modalEl         = document.getElementById('selectionModal');
             const bootstrapModal  = new bootstrap.Modal(modalEl);
             const searchInput     = document.getElementById('componentSearchInput');
-            const listContainer   = document.getElementById('componentsList');
             const searchToggleBtn = document.getElementById('searchToggleBtn');
             const searchSlideWrap = document.getElementById('searchSlideWrap');
 
@@ -291,8 +374,16 @@
 
             // ── Загрузка компонентов ───────────────────────────
             async function loadComponents(term = '') {
+                const listContainer = document.getElementById('componentsList');
                 listContainer.innerHTML =
-                    '<div class="modal-state-msg"><div class="spinner-border text-accent"></div></div>';
+                    '<div class="modal-state-msg"><div class="spinner-border" style="color:var(--accent)"></div></div>';
+                // Сбросить фильтры при новом открытии категории
+                document.getElementById('f_instock').checked = false;
+                document.getElementById('f_order').checked   = false;
+                document.querySelectorAll('input[name="priceRange"]').forEach(r => r.checked = false);
+                document.getElementById('f_price_from').value = '';
+                document.getElementById('f_price_to').value   = '';
+
                 try {
                     const res  = await fetch(`?handler=SearchComponents&category=${encodeURIComponent(currentCategory)}&term=${encodeURIComponent(term)}`);
                     const data = await res.json();
@@ -302,7 +393,25 @@
                         return;
                     }
 
-                    listContainer.innerHTML = data.map(item => {
+                    allComponentsData = data;
+                    buildFilterOptions(data);
+                    renderComponents(data);
+
+                } catch (e) {
+                    document.getElementById('componentsList').innerHTML = '<div class="modal-state-msg text-danger">Ошибка загрузки</div>';
+                }
+            }
+
+            // ── Рендер списка компонентов ──────────────────────
+            function renderComponents(data) {
+                const listContainer = document.getElementById('componentsList');
+
+                if (!data.length) {
+                    listContainer.innerHTML = '<div class="modal-state-msg">Ничего не найдено</div>';
+                    return;
+                }
+
+                listContainer.innerHTML = data.map(item => {
                         const price    = Number(item.price) || 0;
                         const safeName = (item.name  || '').replace(/'/g, "\\'");
                         const safeImg  = (item.image || '').replace(/'/g, "\\'");
@@ -345,10 +454,6 @@
                                 </div>
                             </div>`;
                     }).join('');
-
-                } catch (e) {
-                    listContainer.innerHTML = '<div class="modal-state-msg text-danger">Ошибка загрузки</div>';
-                }
             }
 
             // ── Выбор компонента ───────────────────────────────
@@ -471,6 +576,131 @@
                     btn.disabled    = false;
                     btn.textContent = 'Сохранить';
                 }
+            });
+
+            // ── Очистить все слоты ─────────────────────────────
+            document.getElementById('clearAllBtn').addEventListener('click', () => {
+                if (!confirm('Очистить все выбранные компоненты?')) return;
+                selectedItems = {};
+                updateUI();
+            });
+
+            // ══════════════════════════════════════════════════
+            //  ФИЛЬТРЫ
+            // ══════════════════════════════════════════════════
+            let allComponentsData = [];
+
+            const categorySpecFilters = {
+                'Процессор':          ['socket', 'family', 'cores'],
+                'Материнская плата':  ['socket', 'formFactor', 'chipset'],
+                'Видеокарта':         ['vram', 'gpuFamily'],
+                'Оперативная память': ['ramType', 'capacity', 'speed'],
+                'Накопитель SSD':     ['formFactor', 'interface'],
+                'Блок питания':       ['power', 'efficiency'],
+                'Корпус':             ['formFactor', 'color'],
+                'Охлаждение':         ['type', 'socket'],
+            };
+
+            const specLabels = {
+                socket:'Сокет', family:'Семейство', cores:'Ядра',
+                formFactor:'Форм-фактор', chipset:'Чипсет',
+                vram:'Объём памяти', gpuFamily:'Серия GPU',
+                ramType:'Тип памяти', capacity:'Объём', speed:'Частота',
+                interface:'Интерфейс', power:'Мощность', efficiency:'Сертификат 80+',
+                color:'Цвет', type:'Тип охлаждения',
+            };
+
+            window.toggleFilterGroup = (header) => {
+                header.closest('.filter-group').classList.toggle('open');
+            };
+
+            function getActiveFilters() {
+                const inStock = document.getElementById('f_instock').checked;
+                const onOrder = document.getElementById('f_order').checked;
+                const priceRadio = document.querySelector('input[name="priceRange"]:checked');
+                let priceFrom = 0, priceTo = Infinity;
+                if (priceRadio) {
+                    const [a, b] = priceRadio.value.split('-').map(Number);
+                    priceFrom = a; priceTo = b;
+                } else {
+                    const pf = document.getElementById('f_price_from').value;
+                    const pt = document.getElementById('f_price_to').value;
+                    if (pf) priceFrom = Number(pf);
+                    if (pt) priceTo   = Number(pt);
+                }
+                const brandChecks = document.querySelectorAll('#f_brands_list input:checked');
+                const brands = Array.from(brandChecks).map(c => c.value.toLowerCase());
+                const specChecks = document.querySelectorAll('#f_specs_groups input:checked');
+                const specs = {};
+                specChecks.forEach(c => {
+                    const key = c.dataset.specKey;
+                    if (!specs[key]) specs[key] = [];
+                    specs[key].push(c.value.toLowerCase());
+                });
+                return { inStock, onOrder, priceFrom, priceTo, brands, specs };
+            }
+
+            function extractBrand(name) { return (name || '').split(' ')[0]; }
+
+            window.applyFilters = () => {
+                if (!allComponentsData.length) return;
+                const f = getActiveFilters();
+                const filtered = allComponentsData.filter(item => {
+                    const price = Number(item.price) || 0;
+                    if (f.inStock && !f.onOrder && !item.inStock) return false;
+                    if (!f.inStock && f.onOrder && item.inStock)  return false;
+                    if (price < f.priceFrom || price > f.priceTo) return false;
+                    if (f.brands.length) {
+                        const b = (item.brand || extractBrand(item.name)).toLowerCase();
+                        if (!f.brands.some(fb => b.includes(fb))) return false;
+                    }
+                    for (const [key, vals] of Object.entries(f.specs)) {
+                        const v = (item[key] || '').toLowerCase();
+                        if (vals.length && !vals.some(fv => v.includes(fv))) return false;
+                    }
+                    return true;
+                });
+                renderComponents(filtered);
+            };
+
+            function buildFilterOptions(data) {
+                const brands = [...new Set(data.map(d => extractBrand(d.name)).filter(Boolean))].sort();
+                document.getElementById('f_brands_list').innerHTML = brands.map(b => `
+                    <label class="filter-option">
+                        <input type="checkbox" value="${b}" onchange="applyFilters()"> ${b}
+                    </label>`).join('');
+
+                const specKeys = categorySpecFilters[currentCategory] || [];
+                const specsGroups = document.getElementById('f_specs_groups');
+                specsGroups.innerHTML = '';
+                specKeys.forEach(key => {
+                    const values = [...new Set(data.map(d => d[key] || '').filter(Boolean))].sort();
+                    if (!values.length) return;
+                    specsGroups.innerHTML += `
+                        <div class="filter-group open">
+                            <div class="filter-group-header" onclick="toggleFilterGroup(this)">
+                                ${specLabels[key] || key} <i class="bi bi-chevron-down"></i>
+                            </div>
+                            <div class="filter-group-body">
+                                ${values.map(v => `
+                                    <label class="filter-option">
+                                        <input type="checkbox" data-spec-key="${key}" value="${v}" onchange="applyFilters()">
+                                        ${v}
+                                    </label>`).join('')}
+                            </div>
+                        </div>`;
+                });
+            }
+
+            document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+                document.getElementById('f_instock').checked = false;
+                document.getElementById('f_order').checked   = false;
+                document.querySelectorAll('input[name="priceRange"]').forEach(r => r.checked = false);
+                document.getElementById('f_price_from').value = '';
+                document.getElementById('f_price_to').value   = '';
+                document.querySelectorAll('#f_brands_list input').forEach(c => c.checked = false);
+                document.querySelectorAll('#f_specs_groups input').forEach(c => c.checked = false);
+                renderComponents(allComponentsData);
             });
 
             updateUI();

@@ -1,10 +1,19 @@
+/* ===== IGRA SANS FONT ===== */
+@font-face {
+    font-family: 'IgraSans';
+    src: url('/fonts/IgraSans.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* ===== VARIABLES & CORE ===== */
 :root {
     --bg-main: #0a0c10;
     --bg-card: #12161f;
     --bg-surface: #1a1f2b;
-    --accent: #ff2e88;
-    --accent-glow: rgba(255, 46, 136, 0.4);
+    --accent: #4dabf7;
+    --accent-glow: rgba(77, 171, 247, 0.35);
     --border: rgba(255, 255, 255, 0.08);
     --text-primary: #ffffff;
     --text-secondary: #94a3b8;
@@ -12,25 +21,34 @@
     --danger: #ef4444;
 }
 
+/* ===== ШРИФТ — АБСОЛЮТНО ВСЁ ===== */
+*,
+*::before,
+*::after,
+body,
+input,
+button,
+select,
+textarea,
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, label,
+.modal,
+.badge,
+.btn,
+.form-control,
+.form-select {
+    font-family: 'IgraSans', sans-serif !important;
+}
+
 body {
     background: var(--bg-main);
     color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
 }
 
 /* Scrollbar */
-.scroll-slim::-webkit-scrollbar {
-    width: 6px;
-}
-
-.scroll-slim::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.scroll-slim::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 10px;
-}
+.scroll-slim::-webkit-scrollbar { width: 6px; }
+.scroll-slim::-webkit-scrollbar-track { background: transparent; }
+.scroll-slim::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
 /* ===== LAYOUT & HEADERS ===== */
 .builder-title {
@@ -62,16 +80,16 @@ body {
     position: relative;
 }
 
-    .slot-item:hover {
-        border-color: var(--accent);
-        background: #161b26;
-        transform: translateX(4px);
-    }
+.slot-item:hover {
+    border-color: var(--accent);
+    background: #161b26;
+    transform: translateX(4px);
+}
 
-    .slot-item.empty {
-        opacity: 0.7;
-        border-style: dashed;
-    }
+.slot-item.empty {
+    opacity: 0.7;
+    border-style: dashed;
+}
 
 .slot-icon-sm {
     width: 48px;
@@ -87,7 +105,7 @@ body {
 
 .slot-item:not(.empty) .slot-icon-sm {
     color: var(--accent);
-    background: rgba(255,46,136,0.12);
+    background: rgba(77, 171, 247, 0.12);
 }
 
 .slot-label {
@@ -102,7 +120,18 @@ body {
     font-weight: 500;
 }
 
-/* Buttons */
+/* Иконка слота */
+.slot-icon-plain {
+    font-size: 1.2rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    line-height: 1;
+    width: 20px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* Кнопки слотов */
 .btn-add-modern, .btn-clear-slot {
     width: 38px;
     height: 38px;
@@ -114,18 +143,19 @@ body {
     align-items: center;
     justify-content: center;
     transition: 0.2s;
+    cursor: pointer;
 }
 
-    .btn-add-modern:hover {
-        color: var(--accent);
-        border-color: var(--accent);
-        box-shadow: 0 0 15px var(--accent-glow);
-    }
+.btn-add-modern:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
 
-    .btn-clear-slot:hover {
-        color: var(--danger);
-        border-color: var(--danger);
-    }
+.btn-clear-slot:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+}
 
 /* ===== SUMMARY PANEL ===== */
 .summary-panel {
@@ -140,7 +170,6 @@ body {
 .total-price {
     font-size: 2.4rem;
     font-weight: 800;
-    text-shadow: 0 0 20px rgba(255,255,255,0.1);
 }
 
 .progress-modern {
@@ -154,6 +183,25 @@ body {
     height: 100%;
     background: var(--accent);
     transition: width 0.6s ease;
+}
+
+/* ===== КНОПКА "ЗАКАЗАТЬ СБОРКУ" — БЕЗ РОЗОВОГО НЕОНА ===== */
+.btn-primary-modern {
+    background: var(--accent);
+    border: none;
+    color: #0a0c10;
+    font-weight: 700;
+    padding: 16px;
+    border-radius: 14px;
+    width: 100%;
+    cursor: pointer;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    box-shadow: none;
+}
+
+.btn-primary-modern:hover {
+    opacity: 0.88;
+    box-shadow: 0 4px 18px var(--accent-glow);
 }
 
 /* ===== MODAL & RESULTS ===== */
@@ -179,10 +227,10 @@ body {
     transition: 0.2s;
 }
 
-    .result-card-v2:hover {
-        background: var(--bg-surface);
-        border-color: var(--accent);
-    }
+.result-card-v2:hover {
+    background: var(--bg-surface);
+    border-color: var(--accent);
+}
 
 .offer-item {
     display: flex;
@@ -194,21 +242,11 @@ body {
     cursor: pointer;
 }
 
-    .offer-item:hover {
-        background: rgba(255,46,136,0.1);
-    }
-
-.btn-primary-modern {
-    background: linear-gradient(145deg, var(--accent), #d02b72);
-    border: none;
-    color: white;
-    font-weight: 700;
-    padding: 16px;
-    border-radius: 14px;
-    width: 100%;
-    box-shadow: 0 8px 20px rgba(255,46,136,0.3);
+.offer-item:hover {
+    background: rgba(77, 171, 247, 0.1);
 }
-/* ---- Поиск (лупа + выезжающий input) ---- */
+
+/* ===== ПОИСК ===== */
 .search-toggle-wrap {
     display: flex;
     align-items: center;
@@ -230,11 +268,11 @@ body {
     flex-shrink: 0;
 }
 
-    .btn-search-toggle:hover,
-    .btn-search-toggle.active {
-        background: rgba(255,255,255,0.14);
-        color: #fff;
-    }
+.btn-search-toggle:hover,
+.btn-search-toggle.active {
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+}
 
 .search-slide-wrap {
     overflow: hidden;
@@ -243,10 +281,10 @@ body {
     transition: max-width 0.35s cubic-bezier(.4,0,.2,1), opacity 0.25s;
 }
 
-    .search-slide-wrap.open {
-        max-width: 280px;
-        opacity: 1;
-    }
+.search-slide-wrap.open {
+    max-width: 280px;
+    opacity: 1;
+}
 
 .search-slide-input {
     background: rgba(255,255,255,0.06);
@@ -260,214 +298,10 @@ body {
     transition: border-color 0.2s;
 }
 
-    .search-slide-input::placeholder {
-        color: #6c757d;
-    }
+.search-slide-input::placeholder { color: #6c757d; }
+.search-slide-input:focus { border-color: rgba(255,255,255,0.35); }
 
-    .search-slide-input:focus {
-        border-color: rgba(255,255,255,0.35);
-    }
-
-/* ---- Крестик ---- */
-.btn-close-custom-v2 {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    color: #c8cdd2; /* светло-серый, не белый */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.2s, color 0.2s, transform 0.15s;
-    font-size: 0.85rem;
-}
-
-    .btn-close-custom-v2:hover {
-        background: rgba(255,255,255,0.16);
-        color: #e9ecef;
-        transform: rotate(90deg);
-    }
-
-/* ---- Блок одного компонента (карточка с названием + офферы) ---- */
-.comp-block {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    margin-bottom: 16px;
-    overflow: hidden;
-    transition: border-color 0.2s;
-}
-
-    .comp-block:hover {
-        border-color: rgba(255,255,255,0.16);
-    }
-
-/* Заголовок блока (название комплектующего) */
-.comp-block-header {
-    background: rgba(255,255,255,0.05);
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.comp-block-img {
-    width: 44px;
-    height: 44px;
-    object-fit: contain;
-    border-radius: 6px;
-    background: rgba(0,0,0,0.3);
-    padding: 4px;
-    flex-shrink: 0;
-}
-
-.comp-block-name {
-    font-size: 0.93rem;
-    font-weight: 600;
-    color: #f1f3f5;
-    line-height: 1.3;
-}
-
-.comp-block-specs {
-    font-size: 0.78rem;
-    color: #6c757d;
-    margin-top: 2px;
-}
-
-/* Офферы — сетка 4 в ряд */
-.comp-offers-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: rgba(255,255,255,0.05);
-}
-
-@media (max-width: 700px) {
-    .comp-offers-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-.offer-cell {
-    background: rgba(255,255,255,0.02);
-    padding: 10px 12px;
-    cursor: pointer;
-    transition: background 0.15s;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-
-    .offer-cell:hover {
-        background: rgba(255,255,255,0.07);
-    }
-
-.offer-cell-num {
-    font-size: 0.68rem;
-    color: #6c757d;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.offer-cell-shop {
-    font-size: 0.8rem;
-    color: #adb5bd;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.offer-cell-price {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: var(--accent, #4dabf7);
-    white-space: nowrap;
-}
-
-/* Пустое состояние / лоадер */
-.modal-state-msg {
-    text-align: center;
-    padding: 48px 0;
-    color: #6c757d;
-    font-size: 0.9rem;
-}
-/* Иконка слота — без квадрата, без анимаций */
-.slot-icon-plain {
-    font-size: 1.2rem;
-    color: var(--accent, #4dabf7);
-    flex-shrink: 0;
-    line-height: 1;
-    width: 20px;
-    text-align: center;
-    display: inline-block;
-}
-
-/* Поиск */
-.search-toggle-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-search-toggle {
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    color: #adb5bd;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background .2s, color .2s;
-    flex-shrink: 0;
-}
-
-    .btn-search-toggle:hover, .btn-search-toggle.active {
-        background: rgba(255,255,255,0.14);
-        color: #fff;
-    }
-
-.search-slide-wrap {
-    overflow: hidden;
-    max-width: 0;
-    opacity: 0;
-    transition: max-width .35s cubic-bezier(.4,0,.2,1), opacity .25s;
-}
-
-    .search-slide-wrap.open {
-        max-width: 280px;
-        opacity: 1;
-    }
-
-.search-slide-input {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 8px;
-    color: #fff;
-    padding: 6px 14px;
-    font-size: .88rem;
-    outline: none;
-    width: 240px;
-    transition: border-color .2s;
-}
-
-    .search-slide-input::placeholder {
-        color: #6c757d;
-    }
-
-    .search-slide-input:focus {
-        border-color: rgba(255,255,255,0.35);
-    }
-
-/* Крестик */
+/* ===== КРЕСТИК ===== */
 .btn-close-custom-v2 {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
@@ -480,29 +314,27 @@ body {
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background .2s, color .2s, transform .15s;
-    font-size: .85rem;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    font-size: 0.85rem;
 }
 
-    .btn-close-custom-v2:hover {
-        background: rgba(255,255,255,0.16);
-        color: #e9ecef;
-        transform: rotate(90deg);
-    }
+.btn-close-custom-v2:hover {
+    background: rgba(255,255,255,0.16);
+    color: #e9ecef;
+    transform: rotate(90deg);
+}
 
-/* Блок компонента */
+/* ===== БЛОКИ КОМПОНЕНТОВ ===== */
 .comp-block {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 14px;
     margin-bottom: 16px;
     overflow: hidden;
-    transition: border-color .2s;
+    transition: border-color 0.2s;
 }
 
-    .comp-block:hover {
-        border-color: rgba(255,255,255,0.16);
-    }
+.comp-block:hover { border-color: rgba(255,255,255,0.16); }
 
 .comp-block-header {
     background: rgba(255,255,255,0.05);
@@ -524,19 +356,19 @@ body {
 }
 
 .comp-block-name {
-    font-size: .93rem;
+    font-size: 0.93rem;
     font-weight: 600;
     color: #f1f3f5;
     line-height: 1.3;
 }
 
 .comp-block-specs {
-    font-size: .78rem;
+    font-size: 0.78rem;
     color: #6c757d;
     margin-top: 2px;
 }
 
-/* Офферы 4 в ряд */
+/* ===== ОФФЕРЫ ===== */
 .comp-offers-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -544,37 +376,33 @@ body {
     background: rgba(255,255,255,0.05);
 }
 
-@@media (max-width: 700px) {
-    .comp-offers-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+@media (max-width: 700px) {
+    .comp-offers-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 .offer-cell {
     background: rgba(255,255,255,0.02);
     padding: 10px 12px;
     cursor: pointer;
-    transition: background .15s;
+    transition: background 0.15s;
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
 }
 
-    .offer-cell:hover {
-        background: rgba(255,255,255,0.08);
-    }
+.offer-cell:hover { background: rgba(255,255,255,0.08); }
 
 .offer-cell-num {
-    font-size: .68rem;
+    font-size: 0.68rem;
     color: #6c757d;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: .04em;
+    letter-spacing: 0.04em;
 }
 
 .offer-cell-shop {
-    font-size: .8rem;
+    font-size: 0.8rem;
     color: #adb5bd;
     white-space: nowrap;
     overflow: hidden;
@@ -582,15 +410,149 @@ body {
 }
 
 .offer-cell-price {
-    font-size: .92rem;
+    font-size: 0.92rem;
     font-weight: 700;
-    color: var(--accent, #4dabf7);
+    color: var(--accent);
     white-space: nowrap;
 }
 
+/* ===== ПУСТОЕ СОСТОЯНИЕ ===== */
 .modal-state-msg {
     text-align: center;
     padding: 48px 0;
     color: #6c757d;
-    font-size: .9rem;
+    font-size: 0.9rem;
+}
+
+/* ===== ФИЛЬТРЫ ===== */
+.filters-panel {
+    width: 240px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 0 16px 16px 0;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.filter-group {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 0;
+}
+
+.filter-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 6px 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    user-select: none;
+    transition: color 0.15s;
+}
+
+.filter-group-header:hover { color: #fff; }
+
+.filter-group-header i {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+
+.filter-group.open .filter-group-header i {
+    transform: rotate(180deg);
+}
+
+.filter-group-body {
+    display: none;
+    padding-top: 8px;
+}
+
+.filter-group.open .filter-group-body {
+    display: block;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    transition: color 0.15s;
+}
+
+.filter-option:hover { color: #fff; }
+
+.filter-option input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.filter-option input[type="radio"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.price-range-inputs {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.price-range-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #fff;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+.price-range-input:focus { border-color: var(--accent); }
+.price-range-input::placeholder { color: #6c757d; }
+
+.filter-reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.filter-reset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Обёртка модалки: фильтры слева + список справа */
+.modal-body-with-filters {
+    display: flex;
+    gap: 20px;
+    padding: 16px 24px 24px;
+    max-height: 65vh;
+}
+
+.components-list-wrap {
+    flex: 1;
+    overflow-y: auto;
+    min-width: 0;
 }

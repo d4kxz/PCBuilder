@@ -130,12 +130,7 @@
             <a href="/" class="top-nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")">
                 Конфигуратор
             </a>
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <a href="/Admin/DataSources" class="top-nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Admin") == true ? "active" : "")">
-                    Источники
-                </a>
-            }
+
         </div>
 
         <!-- Профиль / Вход -->
