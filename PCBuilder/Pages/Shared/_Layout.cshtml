@@ -130,7 +130,9 @@
             <a href="/" class="top-nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")">
                 Конфигуратор
             </a>
-
+            <a href="/Chat" class="top-nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Chat" ? "active" : "")">
+                AI-ассистент
+            </a>
         </div>
 
         <!-- Профиль / Вход -->

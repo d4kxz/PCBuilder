@@ -1,0 +1,312 @@
+﻿@page
+@model PCBuilder.Pages.ChatModel
+@{
+    ViewData["Title"] = "AI-Консультант | PC CORE";
+}
+
+<link rel="stylesheet" href="~/css/chat.css" />
+
+<div class="container py-5" style="min-height: calc(100vh - 76px)">
+    <div class="chat-container">
+
+        <!-- Заголовок -->
+        <div class="chat-header mb-4 text-center">
+            <div class="chat-logo mb-3">
+                <i class="bi bi-robot" style="font-size: 3rem; color: var(--accent);"></i>
+            </div>
+            <h1 class="chat-title">AI Конструктор ПК</h1>
+            <p class="text-secondary">Опишите свои пожелания — нейросеть подберёт идеальную сборку</p>
+        </div>
+
+        <!-- Чат область -->
+        <div class="chat-messages-outer">
+            <div id="chatMessages" class="chat-messages-wrapper scroll-slim">
+            </div>
+            <div id="chatLoading" class="chat-loading-overlay d-none">
+                <div class="spinner-border" role="status" style="color: var(--accent);"></div>
+                <span>GigaChat думает...</span>
+            </div>
+        </div>
+
+        <!-- Форма ввода -->
+        <form id="chatForm" class="chat-input-area mt-3" method="post">
+            @Html.AntiForgeryToken()
+            <div class="chat-input-row">
+                <textarea
+                    id="userMessageInput"
+                    name="message"
+                    class="chat-input-textarea"
+                    placeholder="Мне нужен игровой ПК до 100 000 рублей..."
+                    rows="1"></textarea>
+                <button type="submit" class="chat-send-btn" id="sendButton">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+            <div class="chat-input-hint">
+                Enter — отправить &bull; Shift+Enter — новая строка
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const messagesContainer = document.getElementById('chatMessages');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('userMessageInput');
+    const loading = document.getElementById('chatLoading');
+    const sendBtn = document.getElementById('sendButton');
+
+    if (!form || !input || !messagesContainer) {
+        console.error('[Chat] Элементы чата не найдены!');
+        return;
+    }
+    console.log('[Chat] Инициализация успешна');
+
+    let isProcessing = false;
+
+    // Автовысота textarea
+    input.addEventListener('input', function () {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+    });
+
+    // Enter = отправить, Shift+Enter = новая строка
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+    });
+
+    // Перехват формы
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const text = input.value.trim();
+        if (!text || isProcessing) return;
+
+        addMessage('user', text);
+        input.value = '';
+        input.style.height = 'auto';
+
+        isProcessing = true;
+        loading.classList.remove('d-none');
+        sendBtn.disabled = true;
+
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+            const formData = new FormData();
+            formData.append('message', text);
+
+            console.log('[Chat] Отправляю:', text);
+
+            const res = await fetch('/Chat?handler=Send', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                body: formData
+            });
+
+            console.log('[Chat] HTTP статус:', res.status);
+            console.log('[Chat] Content-Type:', res.headers.get('content-type'));
+
+            // Проверяем что ответ — JSON
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const htmlBody = await res.text();
+                console.error('[Chat] Сервер вернул НЕ JSON:', htmlBody.substring(0, 500));
+                addMessage('ai', 'Ошибка сервера: получен HTML вместо JSON. Проверьте консоль (F12).');
+                return;
+            }
+
+            const data = await res.json();
+            console.log('[Chat] Ответ:', data);
+
+            if (data.ok && data.response) {
+                addBuildMessage(data.response);
+            } else {
+                addMessage('ai', 'Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        } catch (err) {
+            console.error('[Chat] Ошибка:', err);
+            addMessage('ai', 'Ошибка соединения. Проверьте консоль (F12).');
+        } finally {
+            isProcessing = false;
+            loading.classList.add('d-none');
+            sendBtn.disabled = false;
+        }
+    });
+
+    // Приветствие
+    setTimeout(function () {
+        addMessage('ai', 'Привет! Я AI-консультант PC CORE. Расскажи о своих требованиях к ПК: бюджет, задачи (игры, работа, монтаж) — и я подберу оптимальную сборку!');
+    }, 500);
+
+    // ── Добавить текстовое сообщение ──────────────────────
+    function addMessage(role, text) {
+        const div = document.createElement('div');
+        div.className = 'chat-message ' + role;
+
+        const icon = role === 'user' ? 'bi-person-circle' : 'bi-robot';
+
+        div.innerHTML =
+            '<div class="chat-message-avatar"><i class="bi ' + icon + '"></i></div>' +
+            '<div class="chat-message-content">' + escapeHtml(text) + '</div>';
+
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // ── Добавить сообщение со сборкой ─────────────────────
+    function addBuildMessage(response) {
+        const div = document.createElement('div');
+        div.className = 'chat-message ai';
+
+        let compsHtml = '';
+        if (response.components && response.components.length) {
+            response.components.forEach(function (c) {
+                const p = Number(c.price) || 0;
+                compsHtml +=
+                    '<div class="build-component-item">' +
+                        '<div class="build-cat-label">' + escapeHtml(c.category) + '</div>' +
+                        '<div class="build-item-name">' + escapeHtml(c.name || '—') + '</div>' +
+                        '<div class="build-item-price">' + p.toLocaleString('ru-RU') + ' ₽</div>' +
+                    '</div>';
+            });
+        }
+
+        const total = Number(response.totalPrice) || 0;
+        const reasoning = response.reasoning || '';
+        const buildName = response.buildName || 'Сборка ПК';
+
+        div.innerHTML =
+            '<div class="chat-message-avatar"><i class="bi bi-robot"></i></div>' +
+            '<div class="chat-message-content">' +
+                '<div style="margin-bottom:10px">' + escapeHtml(reasoning) + '</div>' +
+                '<div class="build-result-card" data-build=\'' + escapeAttr(JSON.stringify(response)) + '\'>' +
+                    '<div class="build-result-title">' + escapeHtml(buildName) + '</div>' +
+                    compsHtml +
+                    '<div class="build-total-row">' +
+                        '<div class="build-total-label">ИТОГО</div>' +
+                        '<div class="build-total-value">' + total.toLocaleString('ru-RU') + ' ₽</div>' +
+                    '</div>' +
+                    '<div class="action-buttons">' +
+                        '<button type="button" class="btn-action primary js-add-to-config"><i class="bi bi-plus-circle me-1"></i> В конфигуратор</button>' +
+                        '<button type="button" class="btn-action js-save-to-profile"><i class="bi bi-bookmark-plus me-1"></i> Сохранить</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Навешиваем события на кнопки
+        var card = div.querySelector('.build-result-card');
+        div.querySelector('.js-add-to-config').addEventListener('click', function () {
+            addToConfigurator(card);
+        });
+        div.querySelector('.js-save-to-profile').addEventListener('click', function () {
+            saveBuildToProfile(card);
+        });
+    }
+
+    // ── Утилиты ──────────────────────────────────────────
+    function escapeHtml(str) {
+        if (!str) return '';
+        var d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    function escapeAttr(str) {
+        return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    }
+});
+
+// ══════════════════════════════════════════════════════════════
+// ГЛОБАЛЬНЫЕ ФУНКЦИИ
+// ══════════════════════════════════════════════════════════════
+
+function addToConfigurator(card) {
+    try {
+        var buildData = JSON.parse(card.dataset.build);
+        var pcBuild = {};
+
+        buildData.components.forEach(function (comp) {
+            pcBuild[comp.category] = {
+                id: 0,
+                name: comp.name || '',
+                selectedPrice: Number(comp.price) || 0,
+                powerScore: comp.powerScore || 0,
+                tdp: comp.tdp || 0,
+                psuWatts: comp.psuWatts || 0,
+                socket: comp.socket || '',
+                ramType: comp.ramType || '',
+                image: ''
+            };
+        });
+
+        localStorage.setItem('pcBuild', JSON.stringify(pcBuild));
+        alert('Сборка добавлена в конфигуратор!');
+        window.location.href = '/';
+    } catch (e) {
+        console.error('Ошибка:', e);
+        alert('Ошибка при добавлении');
+    }
+}
+
+async function saveBuildToProfile(card) {
+    try {
+        var buildData = JSON.parse(card.dataset.build);
+        var pcBuild = {};
+
+        buildData.components.forEach(function (comp) {
+            pcBuild[comp.category] = {
+                id: 0,
+                name: comp.name || '',
+                selectedPrice: Number(comp.price) || 0,
+                powerScore: comp.powerScore || 0,
+                tdp: comp.tdp || 0,
+                psuWatts: comp.psuWatts || 0,
+                socket: comp.socket || '',
+                ramType: comp.ramType || '',
+                image: ''
+            };
+        });
+
+        var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+        var res = await fetch('/Account/Profile?handler=SaveBuild', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            },
+            body: JSON.stringify({
+                name: buildData.buildName || 'AI Сборка',
+                totalPrice: Number(buildData.totalPrice) || 0,
+                buildJson: JSON.stringify(pcBuild),
+                caseImageUrl: null
+            })
+        });
+
+        var data = await res.json();
+
+        if (data.ok) {
+            alert('Сборка сохранена в профиле!');
+        } else if (res.status === 401) {
+            alert('Войдите в аккаунт чтобы сохранять сборки');
+        } else {
+            alert('Ошибка: ' + (data.error || 'Не удалось сохранить'));
+        }
+    } catch (e) {
+        console.error('Ошибка:', e);
+        alert('Ошибка сохранения');
+    }
+}
+</script>
+}
