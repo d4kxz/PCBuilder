@@ -11,8 +11,7 @@ namespace PCBuilder.Services
     public interface IGigaChatService
     {
         Task<string> GetTokenAsync();
-        Task<ChatResponse?> GenerateBuildAsync(string prompt, List<Component>? selectedComponents = null);
-        Task<bool> SaveGeneratedComponentAsync(ComponentProposal proposal);
+        Task<ChatResponse?> GenerateBuildAsync(string prompt);
     }
 
     public class GigaChatService : IGigaChatService
@@ -36,6 +35,7 @@ namespace PCBuilder.Services
                 new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
+        // ── Авторизация ────────────────────────────────────────────────────────────
         public async Task<string> GetTokenAsync()
         {
             var now = DateTime.UtcNow;
@@ -63,66 +63,96 @@ namespace PCBuilder.Services
             _token = jsonDoc.RootElement.GetProperty("access_token").GetString();
 
             if (jsonDoc.RootElement.TryGetProperty("expires_at", out var expiresAt))
-            {
-                var ms = expiresAt.GetInt64();
-                _tokenExpiry = DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
-            }
+                _tokenExpiry = DateTimeOffset.FromUnixTimeMilliseconds(expiresAt.GetInt64()).UtcDateTime;
             else
-            {
                 _tokenExpiry = now.AddMinutes(25);
-            }
 
             return _token!;
         }
 
-        public async Task<ChatResponse?> GenerateBuildAsync(string prompt, List<Component>? selectedComponents = null)
+        // ── Основной метод ─────────────────────────────────────────────────────────
+        public async Task<ChatResponse?> GenerateBuildAsync(string prompt)
         {
+            // 1. Загружаем каталог из БД — только товары в наличии
+            var allComponents = await _context.Components
+                .Where(c => c.InStock)
+                .OrderBy(c => c.Category)
+                .ToListAsync();
+
+            // SQLite не поддерживает сортировку decimal в SQL — сортируем на клиенте
+            allComponents = allComponents
+                .OrderBy(c => c.Category)
+                .ThenBy(c => (double)c.Price)
+                .ToList();
+
+            if (!allComponents.Any())
+                throw new Exception("Каталог пуст. Добавьте компоненты в базу данных.");
+
+            // 2. Формируем текстовый каталог для промпта
+            var catalogText = new StringBuilder();
+            foreach (var grp in allComponents.GroupBy(c => c.Category))
+            {
+                catalogText.AppendLine($"\n### {grp.Key}");
+                foreach (var item in grp)
+                {
+                    var line = $"- ID:{item.Id} | {item.Name} | {item.Specs} | Цена: {item.Price:F0} руб.";
+                    if (!string.IsNullOrEmpty(item.Socket)) line += $" | Сокет: {item.Socket}";
+                    if (!string.IsNullOrEmpty(item.RamType)) line += $" | RAM: {item.RamType}";
+                    if (item.PsuWatts > 0) line += $" | Мощность БП: {item.PsuWatts}W";
+                    if (item.TDP > 0) line += $" | TDP: {item.TDP}W";
+                    catalogText.AppendLine(line);
+                }
+            }
+
+            // 3. Системный промпт с каталогом
+            var systemPrompt = $@"Ты — AI-консультант магазина PC CORE по сборке компьютеров.
+
+КАТАЛОГ МАГАЗИНА (выбирай ТОЛЬКО из него, ничего не придумывай):
+{catalogText}
+
+ПРАВИЛА — обязательны для исполнения:
+1. Выбирай компоненты ТОЛЬКО из каталога выше по их ID. Запрещено использовать модели не из каталога.
+2. В ответе используй точные ID, названия и цены из каталога — не изменяй их.
+3. Проверяй совместимость перед ответом:
+   - Сокет CPU == Сокет материнской платы (AM5/LGA1700)
+   - Тип RAM материнской платы == Тип RAM модуля (DDR4/DDR5)
+   - Суммарный TDP всех компонентов < 80% мощности выбранного БП
+4.Твой ответ ДОЛЖЕН содержать ровно по одному объекту для каждой из следующих категорий: 
+[Процессор, Материнская плата, Видеокарта, Оперативная память, Накопитель SSD, Блок питания, Корпус, Охлаждение]. 
+Если категория отсутствует — сборка считается неверной.
+5. Ответ — строго JSON без текста до и после, без markdown.
+
+Формат JSON:
+{{
+  ""buildName"": ""Краткое название сборки"",
+  ""components"": [
+    {{""id"": 1, ""category"": ""Процессор"", ""name"": ""...(из каталога)"", ""specs"": ""...(из каталога)"", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}},
+    {{""id"": 10, ""category"": ""Материнская плата"", ""name"": ""..."", ""specs"": ""..."", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}},
+    {{""id"": 20, ""category"": ""Видеокарта"", ""name"": ""..."", ""specs"": ""..."", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}},
+    {{""id"": 30, ""category"": ""Оперативная память"", ""name"": ""..."", ""specs"": ""..."", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}},
+    {{""id"": 40, ""category"": ""Накопитель SSD"", ""name"": ""..."", ""specs"": ""..."", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}},
+    {{""id"": 50, ""category"": ""Блок питания"", ""name"": ""..."", ""specs"": ""..."", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 750}},
+    {{""id"": 60, ""category"": ""Корпус"", ""name"": ""..."", ""specs"": ""..."", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}},
+    {{""id"": 70, ""category"": ""Охлаждение"", ""name"": ""..."", ""specs"": ""..."", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}}
+  ],
+  ""totalPrice"": 0,
+  ""reasoning"": ""Обоснование: совместимость, бюджет, цели""
+}}";
+
+            // 4. Запрос к GigaChat
             var token = await GetTokenAsync();
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
-            // Системный промпт — используем verbatim string, кавычки экранируем через ""
-            var systemPrompt = @"Ты — AI-помощник по сборке компьютеров в магазине PC CORE.
-
-Твоя задача:
-1. Проанализировать запрос пользователя (бюджет, цели: игры, работа, монтаж)
-2. Предложить оптимальную сборку ПК
-3. Учитывать совместимость (сокет процессора и материнской платы, тип DDR памяти, мощность БП)
-4. Уложиться в бюджет
-
-ВАЖНО: Ответ СТРОГО в формате JSON, без текста до или после JSON.
-
-Формат ответа:
-{
-  ""buildName"": ""Название сборки"",
-  ""components"": [
-    {""category"": ""Процессор"", ""name"": ""Название модели"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": ""AM5"", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0},
-    {""category"": ""Материнская плата"", ""name"": ""Название"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": ""AM5"", ""ramType"": ""DDR5"", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0},
-    {""category"": ""Видеокарта"", ""name"": ""Название"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0},
-    {""category"": ""Оперативная память"", ""name"": ""Название"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": """", ""ramType"": ""DDR5"", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0},
-    {""category"": ""Накопитель SSD"", ""name"": ""Название"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0},
-    {""category"": ""Блок питания"", ""name"": ""Название"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 750},
-    {""category"": ""Корпус"", ""name"": ""Название"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": """", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0},
-    {""category"": ""Охлаждение"", ""name"": ""Название"", ""specs"": ""Характеристики"", ""price"": 0, ""socket"": ""AM5,LGA1700"", ""ramType"": """", ""tdp"": 0, ""powerScore"": 0, ""psuWatts"": 0}
-  ],
-  ""totalPrice"": 0,
-  ""reasoning"": ""Краткое обоснование выбора компонентов""
-}
-
-Категории СТРОГО: Процессор, Материнская плата, Видеокарта, Оперативная память, Накопитель SSD, Блок питания, Корпус, Охлаждение.
-Цены указывай в рублях, реалистичные на 2025 год.";
-
-            var messages = new[]
-            {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = prompt }
-            };
-
             var payload = JsonSerializer.Serialize(new
             {
                 model = Model,
-                messages = messages,
-                temperature = 0.7,
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user",   content = prompt }
+                },
+                temperature = 0.2, // низкая температура = меньше фантазий
                 max_tokens = 2048
             });
 
@@ -139,67 +169,77 @@ namespace PCBuilder.Services
 
             using var jsonDoc = JsonDocument.Parse(responseString);
             var choices = jsonDoc.RootElement.GetProperty("choices");
-
             if (choices.GetArrayLength() == 0)
-                throw new Exception("GigaChat не вернул ответ");
+                throw new Exception("GigaChat не вернул варианты ответа");
 
-            var rawContent = choices[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+            var rawContent = choices[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString() ?? "";
 
-            // Убираем markdown обёртку если есть
+            // Убираем markdown-обёртку
             rawContent = rawContent.Trim();
-            if (rawContent.StartsWith("```json"))
-                rawContent = rawContent.Substring(7);
-            if (rawContent.StartsWith("```"))
-                rawContent = rawContent.Substring(3);
-            if (rawContent.EndsWith("```"))
-                rawContent = rawContent.Substring(0, rawContent.Length - 3);
+            if (rawContent.StartsWith("```json")) rawContent = rawContent[7..];
+            if (rawContent.StartsWith("```")) rawContent = rawContent[3..];
+            if (rawContent.EndsWith("```")) rawContent = rawContent[..^3];
             rawContent = rawContent.Trim();
 
+            // 5. Парсим ответ
+            ChatResponse parsed;
             try
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-                return JsonSerializer.Deserialize<ChatResponse>(rawContent, options);
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                parsed = JsonSerializer.Deserialize<ChatResponse>(rawContent, opts)
+                    ?? throw new Exception("Пустой ответ после десериализации");
             }
             catch (JsonException e)
             {
-                throw new Exception($"Ошибка парсинга ответа GigaChat. Ответ: {rawContent}", e);
+                throw new Exception($"GigaChat вернул невалидный JSON: {rawContent}", e);
             }
-        }
 
-        public async Task<bool> SaveGeneratedComponentAsync(ComponentProposal proposal)
-        {
-            var exists = await _context.Components.AnyAsync(c =>
-                c.Name.ToLower() == proposal.name!.ToLower() &&
-                c.Category == proposal.category);
+            // 6. ВЕРИФИКАЦИЯ — перезаписываем данные реальными значениями из БД
+            //    Это финальная защита от галлюцинаций: даже если модель что-то исказила,
+            //    пользователь увидит только реальные данные из нашей БД.
+            var dbLookup = allComponents.ToDictionary(c => c.Id);
 
-            if (exists)
-                return false;
-
-            var newComp = new Component
+            var verifiedComponents = new List<ComponentProposal>();
+            foreach (var comp in parsed.components)
             {
-                Category = proposal.category,
-                Name = proposal.name ?? "Unknown",
-                Specs = proposal.specs ?? "",
-                Price = proposal.price,
-                ImageUrl = proposal.imageUrl ?? "",
-                Socket = proposal.socket ?? "",
-                RamType = proposal.ramType ?? "",
-                TDP = proposal.tdp,
-                PowerScore = proposal.powerScore,
-                PsuWatts = proposal.psuWatts,
-                InStock = true
-            };
+                if (comp.id > 0 && dbLookup.TryGetValue(comp.id, out var db))
+                {
+                    // Полная замена данными из БД
+                    verifiedComponents.Add(new ComponentProposal
+                    {
+                        id = db.Id,
+                        category = db.Category,
+                        name = db.Name,
+                        specs = db.Specs,
+                        price = db.Price,
+                        imageUrl = db.ImageUrl,
+                        socket = db.Socket ?? "",
+                        ramType = db.RamType ?? "",
+                        tdp = db.TDP,
+                        powerScore = db.PowerScore,
+                        psuWatts = db.PsuWatts,
+                        inStock = db.InStock
+                    });
+                }
+                else
+                {
+                    // Модель указала несуществующий ID — логируем и пропускаем
+                    // (в продакшне можно добавить ILogger)
+                    Console.WriteLine($"[GigaChat] Предупреждение: компонент с ID={comp.id} не найден в БД, пропущен.");
+                }
+            }
 
-            _context.Components.Add(newComp);
-            await _context.SaveChangesAsync();
-            return true;
+            parsed.components = verifiedComponents;
+            parsed.totalPrice = verifiedComponents.Sum(c => c.price); // пересчёт по реальным ценам
+
+            return parsed;
         }
     }
 
-    // ── DTO классы ─────────────────────────────────────────────
+    // ── DTO ────────────────────────────────────────────────────────────────────────
 
     public class ChatResponse
     {
@@ -211,6 +251,7 @@ namespace PCBuilder.Services
 
     public class ComponentProposal
     {
+        public int id { get; set; }
         public string category { get; set; } = "";
         public string? name { get; set; }
         public string? specs { get; set; }
@@ -221,5 +262,6 @@ namespace PCBuilder.Services
         public int tdp { get; set; }
         public int powerScore { get; set; }
         public int psuWatts { get; set; }
+        public bool inStock { get; set; } = true;
     }
 }
