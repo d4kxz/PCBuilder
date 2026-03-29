@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model PCBuilder.Pages.ChatModel
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
@@ -7,38 +7,37 @@
     var isAuth = SignInManager.IsSignedIn(User);
 }
 
-<link rel="stylesheet" href="~/css/chat.css" />
-
 @if (!isAuth)
 {
-    <div class="container py-5" style="min-height:calc(100vh - 76px);display:flex;align-items:center;justify-content:center;">
+    <!-- ── Гейт для незарегистрированных ──────────────────────── -->
+    <div style="min-height:calc(100vh - 58px);display:flex;align-items:center;justify-content:center;padding:40px 16px;">
         <div style="max-width:460px;width:100%;text-align:center;">
-            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:24px;padding:48px 36px;">
-                <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,46,136,0.1);border:1px solid var(--accent-glow);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
-                    <i class="bi bi-robot" style="font-size:2.2rem;color:var(--accent);"></i>
+            <div style="background:var(--bg-card,#12161f);border:1px solid var(--border);border-radius:24px;padding:48px 36px;">
+                <div style="width:80px;height:80px;border-radius:50%;background:rgba(77,171,247,0.1);border:1px solid rgba(77,171,247,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+                    <i class="bi bi-robot" style="font-size:2.2rem;color:var(--accent,#4dabf7);"></i>
                 </div>
                 <h2 style="font-weight:800;letter-spacing:-0.5px;margin-bottom:10px;">AI Конструктор ПК</h2>
-                <p class="text-secondary mb-4">Войдите в аккаунт, чтобы получить персональный подбор сборки от нейросети</p>
+                <p style="color:var(--text-secondary,#94a3b8)" class="mb-4">Войдите в аккаунт, чтобы получить персональный подбор сборки от нейросети</p>
                 <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:28px;text-align:left;">
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <i class="bi bi-cpu" style="color:var(--accent);font-size:1.1rem;width:20px;"></i>
+                        <i class="bi bi-cpu" style="color:var(--accent,#4dabf7);font-size:1.1rem;width:20px;"></i>
                         <span class="small">Подбор компонентов под ваш бюджет</span>
                     </div>
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <i class="bi bi-shield-check" style="color:var(--accent);font-size:1.1rem;width:20px;"></i>
+                        <i class="bi bi-shield-check" style="color:var(--accent,#4dabf7);font-size:1.1rem;width:20px;"></i>
                         <span class="small">Проверка совместимости компонентов</span>
                     </div>
                     <div class="d-flex align-items-center gap-3">
-                        <i class="bi bi-bookmark-plus" style="color:var(--accent);font-size:1.1rem;width:20px;"></i>
-                        <span class="small">Сохранение сборок в профиле</span>
+                        <i class="bi bi-clock-history" style="color:var(--accent,#4dabf7);font-size:1.1rem;width:20px;"></i>
+                        <span class="small">История диалогов сохраняется в профиле</span>
                     </div>
                 </div>
                 <a href="/Account/Login?returnUrl=/Chat" class="btn-primary-modern d-block mb-3"
-                       style="text-decoration:none;display:flex!important;align-items:center;justify-content:center;gap:8px;">
+                   style="text-decoration:none;display:flex!important;align-items:center;justify-content:center;gap:8px;">
                     <i class="bi bi-box-arrow-in-right"></i> Войти в аккаунт
                 </a>
                 <a href="/Account/Register" class="btn-save-build d-block"
-                       style="text-decoration:none;display:flex!important;align-items:center;justify-content:center;gap:8px;">
+                   style="text-decoration:none;display:flex!important;align-items:center;justify-content:center;gap:8px;">
                     <i class="bi bi-person-plus"></i> Создать аккаунт
                 </a>
             </div>
@@ -47,312 +46,714 @@
 }
 else
 {
+    <!-- ── Основной ChatGPT-like интерфейс ─────────────────────── -->
+    <div class="chat-page-wrap">
 
-    <div class="container py-5" style="min-height: calc(100vh - 76px)">
-        <div class="chat-container">
+        <!-- САЙДБАР: история диалогов -->
+        <aside class="chat-sidebar" id="chatSidebar">
+            <div class="chat-sidebar-header">
+                <span class="chat-sidebar-title">Диалоги</span>
+                <button class="chat-new-btn" id="newChatBtn" title="Новый диалог">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+            <div class="chat-sessions-list scroll-slim" id="sessionsList">
+                @if (!Model.Sessions.Any())
+                {
+                    <div class="chat-sessions-empty">Пока нет диалогов</div>
+                }
+                else
+                {
+                    @foreach (var s in Model.Sessions)
+                    {
+                        <div class="chat-session-item" data-session-id="@s.Id">
+                            <i class="bi bi-chat-left-text chat-session-icon"></i>
+                            <span class="chat-session-title">@s.Title</span>
+                            <button class="chat-session-delete" data-id="@s.Id" title="Удалить">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </aside>
 
-            <!-- Заголовок -->
-            <div class="chat-header mb-4 text-center">
-                <div class="chat-logo mb-3">
-                    <i class="bi bi-robot" style="font-size: 3rem; color: var(--accent);"></i>
-                </div>
-                <h1 class="chat-title">AI Конструктор ПК</h1>
-                <p class="text-secondary">Опишите свои пожелания — нейросеть подберёт идеальную сборку</p>
+        <!-- ОСНОВНАЯ ОБЛАСТЬ -->
+        <div class="chat-main">
+
+            <!-- Верхняя полоска с кнопкой открытия сайдбара на мобильных -->
+            <div class="chat-topbar">
+                <button class="chat-sidebar-toggle" id="sidebarToggle" title="История диалогов">
+                    <i class="bi bi-layout-sidebar-inset"></i>
+                </button>
+                <span class="chat-topbar-title" id="currentSessionTitle">AI Конструктор ПК</span>
             </div>
 
-            <!-- Чат область -->
-            <div class="chat-messages-outer">
-                <div id="chatMessages" class="chat-messages-wrapper scroll-slim">
+            <!-- Область сообщений -->
+            <div class="chat-messages-area" id="chatMessagesArea">
+
+                <!-- Приветствие (скрывается после первого сообщения) -->
+                <div class="chat-welcome" id="chatWelcome">
+                    <div class="chat-welcome-icon">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <h2 class="chat-welcome-title">Над чем ты работаешь?</h2>
+                    <p class="chat-welcome-sub">Опишите свои пожелания — нейросеть подберёт идеальную сборку</p>
+                    <div class="chat-welcome-hints">
+                        <div class="chat-hint-chip" onclick="fillHint(this)">Игровой ПК до 100 000 ₽</div>
+                        <div class="chat-hint-chip" onclick="fillHint(this)">Рабочая станция для монтажа видео</div>
+                        <div class="chat-hint-chip" onclick="fillHint(this)">Тихий офисный ПК до 50 000 ₽</div>
+                        <div class="chat-hint-chip" onclick="fillHint(this)">Топовая сборка без ограничений бюджета</div>
+                    </div>
                 </div>
-                <div id="chatLoading" class="chat-loading-overlay d-none">
-                    <div class="spinner-border" role="status" style="color: var(--accent);"></div>
-                    <span>GigaChat думает...</span>
+
+                <!-- Сообщения -->
+                <div id="chatMessages" class="chat-messages-list"></div>
+
+                <!-- Индикатор загрузки -->
+                <div id="chatLoading" class="chat-typing-indicator d-none">
+                    <div class="chat-typing-avatar"><i class="bi bi-robot"></i></div>
+                    <div class="chat-typing-dots">
+                        <span></span><span></span><span></span>
+                    </div>
                 </div>
             </div>
 
             <!-- Форма ввода -->
-            <form id="chatForm" class="chat-input-area mt-3" method="post">
-                @Html.AntiForgeryToken()
-                <div class="chat-input-row">
-                    <textarea id="userMessageInput"
-                              name="message"
-                              class="chat-input-textarea"
-                              placeholder="Мне нужен игровой ПК до 100 000 рублей..."
-                              rows="1"></textarea>
-                    <button type="submit" class="chat-send-btn" id="sendButton">
-                        <i class="bi bi-send-fill"></i>
-                    </button>
-                </div>
-                <div class="chat-input-hint">
-                    Enter — отправить &bull; Shift+Enter — новая строка
-                </div>
-            </form>
+            <div class="chat-input-wrap">
+                <form id="chatForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="currentSessionId" name="sessionId" value="0" />
+                    <div class="chat-input-box">
+                        <textarea
+                            id="userMessageInput"
+                            name="message"
+                            class="chat-input-field"
+                            placeholder="Спросите AI Конструктор ПК..."
+                            rows="1"></textarea>
+                        <button type="submit" class="chat-input-send" id="sendButton" disabled>
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                    </div>
+                    <div class="chat-input-hint">Enter — отправить &bull; Shift+Enter — новая строка</div>
+                </form>
+            </div>
         </div>
     </div>
 
-    @section Scripts {
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const messagesContainer = document.getElementById('chatMessages');
-                const form = document.getElementById('chatForm');
-                const input = document.getElementById('userMessageInput');
-                const loading = document.getElementById('chatLoading');
-                const sendBtn = document.getElementById('sendButton');
+    <style>
+    /* ══ Лейаут страницы ══════════════════════════════════════════ */
+    .chat-page-wrap {
+        display: flex;
+        height: calc(100vh - 58px);
+        overflow: hidden;
+        background: var(--bg-main, #0a0c10);
+    }
 
-                if (!form || !input || !messagesContainer) {
-                    console.error('[Chat] Элементы чата не найдены!');
+    /* ══ Сайдбар ══════════════════════════════════════════════════ */
+    .chat-sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        background: var(--bg-card, #12161f);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        transition: transform .25s;
+    }
+    @@media (max-width: 768px) {
+        .chat-sidebar {
+            position: fixed; top: 58px; left: 0; bottom: 0; z-index: 500;
+            transform: translateX(-100%);
+        }
+        .chat-sidebar.open { transform: translateX(0); }
+    }
+
+    .chat-sidebar-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 14px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    .chat-sidebar-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-secondary, #94a3b8); }
+
+    .chat-new-btn {
+        background: var(--accent, #4dabf7);
+        border: none; border-radius: 8px;
+        width: 30px; height: 30px;
+        color: #0a0c10; font-size: .9rem;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: opacity .15s;
+    }
+    .chat-new-btn:hover { opacity: .85; }
+
+    .chat-sessions-list { flex: 1; overflow-y: auto; padding: 8px 6px; }
+    .chat-sessions-empty { text-align: center; color: var(--text-secondary); font-size: .82rem; padding: 24px 0; }
+
+    .chat-session-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 10px; border-radius: 8px; cursor: pointer;
+        transition: background .15s; position: relative;
+    }
+    .chat-session-item:hover { background: rgba(255,255,255,0.05); }
+    .chat-session-item.active { background: rgba(77,171,247,0.1); }
+
+    .chat-session-icon { color: var(--text-secondary); font-size: .85rem; flex-shrink: 0; }
+    .chat-session-title { font-size: .82rem; color: var(--text-primary, #fff); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .chat-session-delete {
+        background: none; border: none; color: var(--text-secondary);
+        font-size: .75rem; padding: 2px 4px; border-radius: 4px;
+        cursor: pointer; opacity: 0; transition: opacity .15s, color .15s;
+        flex-shrink: 0;
+    }
+    .chat-session-item:hover .chat-session-delete { opacity: 1; }
+    .chat-session-delete:hover { color: var(--danger, #ef4444); }
+
+    /* ══ Основная область ════════════════════════════════════════ */
+    .chat-main {
+        flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    .chat-topbar {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .chat-sidebar-toggle {
+        background: none; border: 1px solid var(--border); border-radius: 7px;
+        width: 32px; height: 32px; color: var(--text-secondary);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: border-color .15s, color .15s;
+    }
+    .chat-sidebar-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .chat-topbar-title { font-size: .88rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ══ Сообщения ═══════════════════════════════════════════════ */
+    .chat-messages-area {
+        flex: 1; overflow-y: auto; padding: 24px 0;
+        display: flex; flex-direction: column;
+    }
+
+    /* Приветствие */
+    .chat-welcome {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; flex: 1; padding: 40px 20px; text-align: center;
+    }
+    .chat-welcome-icon {
+        width: 72px; height: 72px; border-radius: 50%;
+        background: rgba(77,171,247,0.1); border: 1px solid rgba(77,171,247,0.25);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2rem; color: var(--accent, #4dabf7);
+        margin-bottom: 20px;
+    }
+    .chat-welcome-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+    .chat-welcome-sub { color: var(--text-secondary); font-size: .9rem; margin-bottom: 28px; }
+    .chat-welcome-hints { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 600px; }
+    .chat-hint-chip {
+        background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+        border-radius: 20px; padding: 8px 16px; font-size: .82rem;
+        color: var(--text-secondary); cursor: pointer; transition: all .15s;
+    }
+    .chat-hint-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(77,171,247,0.06); }
+
+    /* Список сообщений */
+    .chat-messages-list { display: flex; flex-direction: column; padding: 0 20px; gap: 4px; }
+
+    /* Пузырь сообщения */
+    .chat-msg {
+        display: flex; align-items: flex-end; gap: 10px;
+        max-width: 75%; margin-bottom: 4px;
+    }
+    .chat-msg.user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+    .chat-msg.ai {
+        align-self: flex-start;
+    }
+
+    .chat-msg-avatar {
+        width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: .9rem; flex-shrink: 0;
+    }
+    .chat-msg.user .chat-msg-avatar {
+        background: var(--accent, #4dabf7); color: #0a0c10;
+    }
+    .chat-msg.ai .chat-msg-avatar {
+        background: rgba(255,255,255,0.08); color: var(--accent, #4dabf7);
+        border: 1px solid var(--border);
+    }
+
+    .chat-msg-bubble {
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: .9rem;
+        line-height: 1.55;
+        max-width: 100%;
+        word-break: break-word;
+    }
+    .chat-msg.user .chat-msg-bubble {
+        background: var(--accent, #4dabf7);
+        color: #0a0c10;
+        border-bottom-right-radius: 4px;
+    }
+    .chat-msg.ai .chat-msg-bubble {
+        background: var(--bg-surface, #1a1f2b);
+        color: var(--text-primary, #fff);
+        border: 1px solid var(--border);
+        border-bottom-left-radius: 4px;
+    }
+
+    /* Время */
+    .chat-msg-time {
+        font-size: .65rem; color: var(--text-secondary);
+        padding: 0 4px; flex-shrink: 0;
+        align-self: flex-end; margin-bottom: 2px;
+    }
+
+    /* Карточка сборки */
+    .build-result-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--border);
+        border-radius: 14px; overflow: hidden;
+        margin-top: 10px;
+    }
+    .build-result-title {
+        padding: 12px 16px;
+        font-weight: 700; font-size: .95rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(77,171,247,0.06);
+        color: var(--accent, #4dabf7);
+    }
+    .build-component-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        font-size: .82rem;
+    }
+    .build-component-item:last-of-type { border-bottom: none; }
+    .build-cat-label { color: var(--text-secondary); min-width: 130px; font-size: .75rem; }
+    .build-item-name { flex: 1; color: var(--text-primary); }
+    .build-item-price { color: var(--accent); font-weight: 600; white-space: nowrap; }
+    .build-total-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.03);
+        border-top: 1px solid var(--border);
+    }
+    .build-total-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-secondary); }
+    .build-total-value { font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+    .build-action-row {
+        display: flex; gap: 8px; padding: 10px 16px;
+        border-top: 1px solid var(--border);
+    }
+    .build-action-btn {
+        flex: 1; background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border); border-radius: 8px;
+        color: var(--text-secondary); font-size: .78rem;
+        padding: 7px 10px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 5px;
+        transition: all .15s;
+    }
+    .build-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .build-action-btn.primary { background: var(--accent); border-color: var(--accent); color: #0a0c10; }
+    .build-action-btn.primary:hover { opacity: .88; }
+
+    /* Индикатор набора */
+    .chat-typing-indicator {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 20px;
+    }
+    .chat-typing-avatar {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--accent); font-size: .9rem;
+    }
+    .chat-typing-dots {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 18px; border-bottom-left-radius: 4px;
+        padding: 10px 16px; display: flex; gap: 5px; align-items: center;
+    }
+    .chat-typing-dots span {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--text-secondary);
+        animation: typingBounce 1.2s infinite;
+    }
+    .chat-typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .chat-typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @@keyframes typingBounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+        30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ══ Поле ввода ══════════════════════════════════════════════ */
+    .chat-input-wrap {
+        padding: 16px 20px 20px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+        background: var(--bg-main, #0a0c10);
+    }
+    .chat-input-box {
+        display: flex; align-items: flex-end; gap: 10px;
+        background: var(--bg-card, #12161f);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 12px 14px;
+        transition: border-color .2s;
+    }
+    .chat-input-box:focus-within { border-color: rgba(77,171,247,0.4); }
+
+    .chat-input-field {
+        flex: 1; background: none; border: none; outline: none;
+        color: var(--text-primary, #fff); font-size: .9rem;
+        resize: none; max-height: 150px; line-height: 1.5;
+        scrollbar-width: none;
+    }
+    .chat-input-field::placeholder { color: var(--text-secondary); }
+    .chat-input-field::-webkit-scrollbar { display: none; }
+
+    .chat-input-send {
+        background: var(--accent, #4dabf7);
+        border: none; border-radius: 10px;
+        width: 34px; height: 34px;
+        color: #0a0c10; font-size: .9rem;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; flex-shrink: 0;
+        transition: opacity .15s, background .15s;
+    }
+    .chat-input-send:disabled { background: rgba(255,255,255,0.1); color: var(--text-secondary); cursor: not-allowed; }
+    .chat-input-send:not(:disabled):hover { opacity: .85; }
+
+    .chat-input-hint { font-size: .68rem; color: var(--text-secondary); text-align: center; margin-top: 6px; }
+    </style>
+
+    @section Scripts {
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const form          = document.getElementById('chatForm');
+        const input         = document.getElementById('userMessageInput');
+        const sendBtn       = document.getElementById('sendButton');
+        const loading       = document.getElementById('chatLoading');
+        const messagesList  = document.getElementById('chatMessages');
+        const messagesArea  = document.getElementById('chatMessagesArea');
+        const welcome       = document.getElementById('chatWelcome');
+        const sessionIdInp  = document.getElementById('currentSessionId');
+        const sessionsList  = document.getElementById('sessionsList');
+        const topbarTitle   = document.getElementById('currentSessionTitle');
+        const sidebar       = document.getElementById('chatSidebar');
+
+        let isProcessing = false;
+        let currentSessionId = 0;
+
+        // ── Сайдбар toggle (мобильные) ────────────────────────
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+
+        // ── Кнопка "Новый диалог" ─────────────────────────────
+        document.getElementById('newChatBtn').addEventListener('click', () => {
+            startNewChat();
+        });
+
+        function startNewChat() {
+            currentSessionId = 0;
+            sessionIdInp.value = 0;
+            messagesList.innerHTML = '';
+            welcome.style.display = '';
+            topbarTitle.textContent = 'AI Конструктор ПК';
+            document.querySelectorAll('.chat-session-item').forEach(i => i.classList.remove('active'));
+            sidebar.classList.remove('open');
+        }
+
+        // ── Подсказки на приветственном экране ───────────────
+        window.fillHint = function(el) {
+            input.value = el.textContent;
+            input.dispatchEvent(new Event('input'));
+            input.focus();
+        };
+
+        // ── Автовысота textarea + активация кнопки ───────────
+        input.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+            sendBtn.disabled = !this.value.trim();
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!sendBtn.disabled) form.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+        });
+
+        // ── Отправка ──────────────────────────────────────────
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text || isProcessing) return;
+
+            // Скрываем приветствие
+            welcome.style.display = 'none';
+
+            addMessage('user', text);
+            input.value = '';
+            input.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            isProcessing = true;
+            loading.classList.remove('d-none');
+            scrollToBottom();
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const fd = new FormData();
+                fd.append('message', text);
+                fd.append('sessionId', currentSessionId);
+
+                const res = await fetch('/Chat?handler=Send', {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': token },
+                    body: fd
+                });
+
+                const ct = res.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    addMessage('ai', 'Ошибка сервера. Проверьте консоль (F12).');
                     return;
                 }
-                console.log('[Chat] Инициализация успешна');
 
-                let isProcessing = false;
+                const data = await res.json();
 
-                // Автовысота textarea
-                input.addEventListener('input', function () {
-                    this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-                });
-
-                // Enter = отправить, Shift+Enter = новая строка
-                input.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        form.dispatchEvent(new Event('submit', { cancelable: true }));
+                if (data.ok) {
+                    // Обновляем sessionId
+                    if (data.sessionId && data.sessionId !== currentSessionId) {
+                        currentSessionId = data.sessionId;
+                        sessionIdInp.value = currentSessionId;
+                        // Добавляем сессию в сайдбар если новая
+                        addSessionToSidebar(data.sessionId, text);
                     }
-                });
+                    addBuildMessage(data.response);
+                } else {
+                    addMessage('ai', 'Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            } catch (err) {
+                console.error(err);
+                addMessage('ai', 'Ошибка соединения.');
+            } finally {
+                isProcessing = false;
+                loading.classList.add('d-none');
+                scrollToBottom();
+            }
+        });
 
-                // Перехват формы
-                form.addEventListener('submit', async function (e) {
-                    e.preventDefault();
+        // ── Клик по сессии в сайдбаре ─────────────────────────
+        sessionsList.addEventListener('click', async function (e) {
+            const deleteBtn = e.target.closest('.chat-session-delete');
+            if (deleteBtn) {
+                e.stopPropagation();
+                await deleteSession(parseInt(deleteBtn.dataset.id));
+                return;
+            }
 
-                    const text = input.value.trim();
-                    if (!text || isProcessing) return;
+            const item = e.target.closest('.chat-session-item');
+            if (!item) return;
 
-                    addMessage('user', text);
-                    input.value = '';
-                    input.style.height = 'auto';
+            const sid = parseInt(item.dataset.sessionId);
+            await loadSession(sid);
+            sidebar.classList.remove('open');
+        });
 
-                    isProcessing = true;
-                    loading.classList.remove('d-none');
-                    sendBtn.disabled = true;
+        // ── Загрузить историю сессии ──────────────────────────
+        async function loadSession(sid) {
+            const res  = await fetch(`/Chat?handler=Session&id=${sid}`);
+            const data = await res.json();
+            if (!data.ok) return;
 
-                    try {
-                        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            currentSessionId = sid;
+            sessionIdInp.value = sid;
+            topbarTitle.textContent = data.session.title;
 
-                        const formData = new FormData();
-                        formData.append('message', text);
+            welcome.style.display = 'none';
+            messagesList.innerHTML = '';
 
-                        console.log('[Chat] Отправляю:', text);
+            document.querySelectorAll('.chat-session-item').forEach(i => {
+                i.classList.toggle('active', parseInt(i.dataset.sessionId) === sid);
+            });
 
-                        const res = await fetch('/Chat?handler=Send', {
-                            method: 'POST',
-                            headers: {
-                                'RequestVerificationToken': token
-                            },
-                            body: formData
-                        });
-
-                        console.log('[Chat] HTTP статус:', res.status);
-                        console.log('[Chat] Content-Type:', res.headers.get('content-type'));
-
-                        // Проверяем что ответ — JSON
-                        const contentType = res.headers.get('content-type') || '';
-                        if (!contentType.includes('application/json')) {
-                            const htmlBody = await res.text();
-                            console.error('[Chat] Сервер вернул НЕ JSON:', htmlBody.substring(0, 500));
-                            addMessage('ai', 'Ошибка сервера: получен HTML вместо JSON. Проверьте консоль (F12).');
-                            return;
+            data.session.messages.forEach(function (m) {
+                if (m.role === 'user') {
+                    addMessage('user', m.content, false);
+                } else {
+                    if (m.buildJson) {
+                        try {
+                            addBuildMessage(JSON.parse(m.buildJson), false);
+                        } catch {
+                            addMessage('ai', m.content, false);
                         }
-
-                        const data = await res.json();
-                        console.log('[Chat] Ответ:', data);
-
-                        if (data.ok && data.response) {
-                            addBuildMessage(data.response);
-                        } else {
-                            addMessage('ai', 'Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-                        }
-                    } catch (err) {
-                        console.error('[Chat] Ошибка:', err);
-                        addMessage('ai', 'Ошибка соединения. Проверьте консоль (F12).');
-                    } finally {
-                        isProcessing = false;
-                        loading.classList.add('d-none');
-                        sendBtn.disabled = false;
+                    } else {
+                        addMessage('ai', m.content, false);
                     }
-                });
-
-                // Приветствие
-                setTimeout(function () {
-                    addMessage('ai', 'Привет! Я AI-консультант PC CORE. Расскажи о своих требованиях к ПК: бюджет, задачи (игры, работа, монтаж) — и я подберу оптимальную сборку!');
-                }, 500);
-
-                // ── Добавить текстовое сообщение ──────────────────────
-                function addMessage(role, text) {
-                    const div = document.createElement('div');
-                    div.className = 'chat-message ' + role;
-
-                    const icon = role === 'user' ? 'bi-person-circle' : 'bi-robot';
-
-                    div.innerHTML =
-                        '<div class="chat-message-avatar"><i class="bi ' + icon + '"></i></div>' +
-                        '<div class="chat-message-content">' + escapeHtml(text) + '</div>';
-
-                    messagesContainer.appendChild(div);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }
-
-                // ── Добавить сообщение со сборкой ─────────────────────
-                function addBuildMessage(response) {
-                    const div = document.createElement('div');
-                    div.className = 'chat-message ai';
-
-                    let compsHtml = '';
-                    if (response.components && response.components.length) {
-                        response.components.forEach(function (c) {
-                            const p = Number(c.price) || 0;
-                            compsHtml +=
-                                '<div class="build-component-item">' +
-                                    '<div class="build-cat-label">' + escapeHtml(c.category) + '</div>' +
-                                    '<div class="build-item-name">' + escapeHtml(c.name || '—') + '</div>' +
-                                    '<div class="build-item-price">' + p.toLocaleString('ru-RU') + ' ₽</div>' +
-                                '</div>';
-                        });
-                    }
-
-                    const total = Number(response.totalPrice) || 0;
-                    const reasoning = response.reasoning || '';
-                    const buildName = response.buildName || 'Сборка ПК';
-
-                    div.innerHTML =
-                        '<div class="chat-message-avatar"><i class="bi bi-robot"></i></div>' +
-                        '<div class="chat-message-content">' +
-                            '<div style="margin-bottom:10px">' + escapeHtml(reasoning) + '</div>' +
-                            '<div class="build-result-card" data-build=\'' + escapeAttr(JSON.stringify(response)) + '\'>' +
-                                '<div class="build-result-title">' + escapeHtml(buildName) + '</div>' +
-                                compsHtml +
-                                '<div class="build-total-row">' +
-                                    '<div class="build-total-label">ИТОГО</div>' +
-                                    '<div class="build-total-value">' + total.toLocaleString('ru-RU') + ' ₽</div>' +
-                                '</div>' +
-                                '<div class="action-buttons">' +
-                                    '<button type="button" class="btn-action primary js-add-to-config"><i class="bi bi-plus-circle me-1"></i> В конфигуратор</button>' +
-                                    '<button type="button" class="btn-action js-save-to-profile"><i class="bi bi-bookmark-plus me-1"></i> Сохранить</button>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>';
-
-                    messagesContainer.appendChild(div);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-                    // Навешиваем события на кнопки
-                    var card = div.querySelector('.build-result-card');
-                    div.querySelector('.js-add-to-config').addEventListener('click', function () {
-                        addToConfigurator(card);
-                    });
-                    div.querySelector('.js-save-to-profile').addEventListener('click', function () {
-                        saveBuildToProfile(card);
-                    });
-                }
-
-                // ── Утилиты ──────────────────────────────────────────
-                function escapeHtml(str) {
-                    if (!str) return '';
-                    var d = document.createElement('div');
-                    d.textContent = str;
-                    return d.innerHTML;
-                }
-
-                function escapeAttr(str) {
-                    return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
                 }
             });
 
-            // ══════════════════════════════════════════════════════════════
-            // ГЛОБАЛЬНЫЕ ФУНКЦИИ
-            // ══════════════════════════════════════════════════════════════
+            scrollToBottom();
+        }
 
-            function addToConfigurator(card) {
-                try {
-                    var buildData = JSON.parse(card.dataset.build);
-                    var pcBuild = {};
+        // ── Удалить сессию ────────────────────────────────────
+        async function deleteSession(sid) {
+            if (!confirm('Удалить этот диалог?')) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            await fetch(`/Chat?handler=DeleteSession&id=${sid}`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': token }
+            });
+            const item = document.querySelector(`.chat-session-item[data-session-id="${sid}"]`);
+            item?.remove();
+            if (currentSessionId === sid) startNewChat();
+        }
 
-                    buildData.components.forEach(function (comp) {
-                        pcBuild[comp.category] = {
-                            id: 0,
-                            name: comp.name || '',
-                            selectedPrice: Number(comp.price) || 0,
-                            powerScore: comp.powerScore || 0,
-                            tdp: comp.tdp || 0,
-                            psuWatts: comp.psuWatts || 0,
-                            socket: comp.socket || '',
-                            ramType: comp.ramType || '',
-                            image: ''
-                        };
-                    });
+        // ── Добавить сессию в сайдбар ─────────────────────────
+        function addSessionToSidebar(sid, title) {
+            const t = title.length > 50 ? title.slice(0, 50) + '…' : title;
+            const empty = sessionsList.querySelector('.chat-sessions-empty');
+            if (empty) empty.remove();
 
-                    localStorage.setItem('pcBuild', JSON.stringify(pcBuild));
-                    alert('Сборка добавлена в конфигуратор!');
-                    window.location.href = '/';
-                } catch (e) {
-                    console.error('Ошибка:', e);
-                    alert('Ошибка при добавлении');
-                }
-            }
+            const item = document.createElement('div');
+            item.className = 'chat-session-item active';
+            item.dataset.sessionId = sid;
+            item.innerHTML =
+                '<i class="bi bi-chat-left-text chat-session-icon"></i>' +
+                '<span class="chat-session-title">' + escapeHtml(t) + '</span>' +
+                '<button class="chat-session-delete" data-id="' + sid + '" title="Удалить"><i class="bi bi-trash3"></i></button>';
 
-            async function saveBuildToProfile(card) {
-                try {
-                    var buildData = JSON.parse(card.dataset.build);
-                    var pcBuild = {};
+            document.querySelectorAll('.chat-session-item').forEach(i => i.classList.remove('active'));
+            sessionsList.prepend(item);
+            topbarTitle.textContent = t;
+        }
 
-                    buildData.components.forEach(function (comp) {
-                        pcBuild[comp.category] = {
-                            id: 0,
-                            name: comp.name || '',
-                            selectedPrice: Number(comp.price) || 0,
-                            powerScore: comp.powerScore || 0,
-                            tdp: comp.tdp || 0,
-                            psuWatts: comp.psuWatts || 0,
-                            socket: comp.socket || '',
-                            ramType: comp.ramType || '',
-                            image: ''
-                        };
-                    });
+        // ── Рендер: обычное сообщение ─────────────────────────
+        function addMessage(role, text, doScroll = true) {
+            const wrap = document.createElement('div');
+            wrap.className = 'chat-msg ' + role;
 
-                    var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const now = new Date().toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+            const icon = role === 'user' ? 'bi-person-fill' : 'bi-robot';
 
-                    var res = await fetch('/Account/Profile?handler=SaveBuild', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'RequestVerificationToken': token
-                        },
-                        body: JSON.stringify({
-                            name: buildData.buildName || 'AI Сборка',
-                            totalPrice: Number(buildData.totalPrice) || 0,
-                            buildJson: JSON.stringify(pcBuild),
-                            caseImageUrl: null
-                        })
-                    });
+            wrap.innerHTML =
+                '<div class="chat-msg-avatar"><i class="bi ' + icon + '"></i></div>' +
+                '<div class="chat-msg-bubble">' + escapeHtml(text) + '</div>' +
+                '<div class="chat-msg-time">' + now + '</div>';
 
-                    var data = await res.json();
+            messagesList.appendChild(wrap);
+            if (doScroll) scrollToBottom();
+        }
 
-                    if (data.ok) {
-                        alert('Сборка сохранена в профиле!');
-                    } else if (res.status === 401) {
-                        alert('Войдите в аккаунт чтобы сохранять сборки');
-                    } else {
-                        alert('Ошибка: ' + (data.error || 'Не удалось сохранить'));
-                    }
-                } catch (e) {
-                    console.error('Ошибка:', e);
-                    alert('Ошибка сохранения');
-                }
-            }
-        </script>
+        // ── Рендер: сборка от AI ──────────────────────────────
+        function addBuildMessage(response, doScroll = true) {
+            const wrap = document.createElement('div');
+            wrap.className = 'chat-msg ai';
+
+            let compsHtml = '';
+            (response.components || []).forEach(function (c) {
+                const p = Number(c.price) || 0;
+                compsHtml +=
+                    '<div class="build-component-item">' +
+                        '<div class="build-cat-label">' + escapeHtml(c.category) + '</div>' +
+                        '<div class="build-item-name">' + escapeHtml(c.name || '—') + '</div>' +
+                        '<div class="build-item-price">' + p.toLocaleString('ru-RU') + ' ₽</div>' +
+                    '</div>';
+            });
+
+            const total     = Number(response.totalPrice) || 0;
+            const reasoning = response.reasoning || '';
+            const buildName = response.buildName || 'Сборка ПК';
+            const now = new Date().toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+
+            wrap.innerHTML =
+                '<div class="chat-msg-avatar"><i class="bi bi-robot"></i></div>' +
+                '<div style="max-width:100%;min-width:0">' +
+                    '<div class="chat-msg-bubble" style="border-bottom-left-radius:4px">' +
+                        (reasoning ? '<p style="margin:0 0 10px">' + escapeHtml(reasoning) + '</p>' : '') +
+                        '<div class="build-result-card" data-build=\'' + escapeAttr(JSON.stringify(response)) + '\'>' +
+                            '<div class="build-result-title">' + escapeHtml(buildName) + '</div>' +
+                            compsHtml +
+                            '<div class="build-total-row">' +
+                                '<div class="build-total-label">ИТОГО</div>' +
+                                '<div class="build-total-value">' + total.toLocaleString('ru-RU') + ' ₽</div>' +
+                            '</div>' +
+                            '<div class="build-action-row">' +
+                                '<button type="button" class="build-action-btn primary js-add-to-config"><i class="bi bi-plus-circle me-1"></i> В конфигуратор</button>' +
+                                '<button type="button" class="build-action-btn js-save-to-profile"><i class="bi bi-bookmark-plus me-1"></i> Сохранить</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="chat-msg-time">' + now + '</div>';
+
+            messagesList.appendChild(wrap);
+
+            const card = wrap.querySelector('.build-result-card');
+            wrap.querySelector('.js-add-to-config').addEventListener('click', () => addToConfigurator(card));
+            wrap.querySelector('.js-save-to-profile').addEventListener('click', () => saveBuildToProfile(card));
+
+            if (doScroll) scrollToBottom();
+        }
+
+        // ── Прокрутка вниз ────────────────────────────────────
+        function scrollToBottom() {
+            messagesArea.scrollTo({ top: messagesArea.scrollHeight, behavior: 'smooth' });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            var d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+        function escapeAttr(str) {
+            return str.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+        }
+    });
+
+    // ── Глобальные функции для кнопок карточки ────────────────
+    function addToConfigurator(card) {
+        try {
+            var b = JSON.parse(card.dataset.build);
+            var pc = {};
+            b.components.forEach(c => {
+                pc[c.category] = { id:0, name:c.name||'', selectedPrice:Number(c.price)||0,
+                    powerScore:c.powerScore||0, tdp:c.tdp||0, psuWatts:c.psuWatts||0,
+                    socket:c.socket||'', ramType:c.ramType||'', image:'' };
+            });
+            localStorage.setItem('pcBuild', JSON.stringify(pc));
+            alert('Сборка добавлена в конфигуратор!');
+            window.location.href = '/';
+        } catch(e) { alert('Ошибка при добавлении'); }
     }
 
+    async function saveBuildToProfile(card) {
+        try {
+            var b = JSON.parse(card.dataset.build);
+            var pc = {};
+            b.components.forEach(c => {
+                pc[c.category] = { id:0, name:c.name||'', selectedPrice:Number(c.price)||0,
+                    powerScore:c.powerScore||0, tdp:c.tdp||0, psuWatts:c.psuWatts||0,
+                    socket:c.socket||'', ramType:c.ramType||'', image:'' };
+            });
+            var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            var res = await fetch('/Account/Profile?handler=SaveBuild', {
+                method:'POST',
+                headers:{'Content-Type':'application/json','RequestVerificationToken':token},
+                body: JSON.stringify({ name:b.buildName||'AI Сборка', totalPrice:Number(b.totalPrice)||0,
+                    buildJson:JSON.stringify(pc), caseImageUrl:null })
+            });
+            var data = await res.json();
+            alert(data.ok ? 'Сборка сохранена в профиле!' : 'Ошибка: ' + (data.error || 'Не удалось сохранить'));
+        } catch(e) { alert('Ошибка сохранения'); }
+    }
+    </script>
+    }
 }
-@* конец @if(isAuth) *@
-
-} @* конец else (авторизованный пользователь) *@

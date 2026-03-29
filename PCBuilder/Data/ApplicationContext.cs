@@ -9,17 +9,46 @@ namespace PCBuilder.Data
     {
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
         {
-            Database.EnsureCreated();
+            // Применяем миграции для создания БД и таблиц
+            try
+            {
+                if (Database.IsRelational())
+                {
+                    Database.Migrate();
+                }
+            }
+            catch
+            {
+                // Игнорируем ошибки при инициализации во время разработки
+            }
         }
 
         public DbSet<Component> Components { get; set; } = null!;
         public DbSet<SavedBuild> SavedBuilds { get; set; } = null!;
+        public DbSet<ChatSession> ChatSessions { get; set; } = null!;
+        public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            // Подавляем предупреждение о pending changes при инициализации
+            optionsBuilder.ConfigureWarnings(w => 
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<SavedBuild>().HasIndex(b => b.UserId);
+            modelBuilder.Entity<ChatSession>()
+        .HasIndex(s => s.UserId);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(m => m.Session)
+                .WithMany(s => s.Messages)
+                .HasForeignKey(m => m.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ── SEED: каталог комплектующих ──────────────────────────────────────────
             // Картинки: Wikipedia Commons (публичные, без hotlink-блокировки)
@@ -156,7 +185,7 @@ namespace PCBuilder.Data
         Socket = "AM5",
         RamType = "DDR5",
         Name = "AMD Ryzen 7 9800X3D",
-        Specs = "8 ядер / 16 потока, 96MB L3 Cache, TDP 120W",
+        Specs = "8 ядер / 16 потоков, 96MB L3 Cache, TDP 120W",
         TDP = 120,
         PowerScore = 99,
         PsuWatts = 0,
@@ -540,7 +569,7 @@ new Component
     PsuWatts = 0,
     Price = 34000,
     InStock = true,
-    ImageUrl = "https://static.gigabyte.com/StaticFile/Image/Global/e3b6e8f4c3c3e8e8e8e8e8e8e8e8e8e8/Product/34111/png/1000"
+    ImageUrl = "https://static.gigabyte.com/StaticFile/Image/Global/e3b6e8f4c3c3e8e8e8e8e8e8e8e8e8/Product/34111/png/1000"
 },
 new Component
 {
@@ -1565,7 +1594,7 @@ new Component
     PsuWatts = 0,
     Price = 43500,
     InStock = true,
-    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-Kingston_FURY_Beast_DDR5_Memory.jpg"
+    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-G.Skill_Trident_Z_RGB_Memory.jpg"
 },
 new Component
 {
@@ -1579,7 +1608,7 @@ new Component
     PsuWatts = 0,
     Price = 28400,
     InStock = true,
-    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-Kingston_FURY_Beast_DDR5_Memory.jpg"
+    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-G.Skill_Trident_Z_RGB_Memory.jpg"
 },
 new Component
 {
@@ -1607,7 +1636,7 @@ new Component
     PsuWatts = 0,
     Price = 31500,
     InStock = true,
-    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-Kingston_FURY_Beast_DDR5_Memory.jpg"
+    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-G.Skill_Trident_Z_RGB_Memory.jpg"
 },
 new Component
 {
@@ -1635,7 +1664,7 @@ new Component
     PsuWatts = 0,
     Price = 25900,
     InStock = true,
-    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-Kingston_FURY_Beast_DDR5_Memory.jpg"
+    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-G.Skill_Trident_Z_RGB_Memory.jpg"
 },
 new Component
 {
@@ -1663,7 +1692,7 @@ new Component
     PsuWatts = 0,
     Price = 69800,
     InStock = false,
-    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-Kingston_FURY_Beast_DDR5_Memory.jpg"
+    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Kingston_FURY_Beast_DDR5_Memory.jpg/320px-G.Skill_Trident_Z_RGB_Memory.jpg"
 },
                 new Component
                 {
@@ -2715,7 +2744,7 @@ new Component
 {
     Id = 806,
     Category = "Охлаждение",
-    Socket = "LGA1851,AM5",
+    Socket = "AM5,LGA1851",
     Name = "Be Quiet! Pure Loop 3 LX 360",
     Specs = "Тихая СВО, стильная белая подсветка, надежная помпа",
     TDP = 9,
@@ -2771,7 +2800,7 @@ new Component
 {
     Id = 810,
     Category = "Охлаждение",
-    Socket = "LGA1851,AM5",
+    Socket = "AM5,LGA1700",
     Name = "MSI MAG CoreLiquid A13 360",
     Specs = "СВО с поворотной крышкой, высокая совместимость",
     TDP = 10,
@@ -2808,117 +2837,7 @@ new Component
     Price = 18900,
     InStock = false,
     ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Noctua_NH-D15_cooler.jpg/320px-Noctua_NH-D15_cooler.jpg"
-},
-                new Component
-                {
-                    Id = 60,
-                    Category = "Корпус",
-                    Name = "NZXT H7 Flow",
-                    Specs = "Mid-Tower ATX, закалённое стекло, 2×USB-A 3.2",
-                    TDP = 0,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 8490,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/ABS_computer_case.jpg/320px-ABS_computer_case.jpg"
-                },
-                new Component
-                {
-                    Id = 61,
-                    Category = "Корпус",
-                    Name = "Fractal Design Meshify 2",
-                    Specs = "Mid-Tower ATX, высокий поток воздуха, USB-C",
-                    TDP = 0,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 11990,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/ABS_computer_case.jpg/320px-ABS_computer_case.jpg"
-                },
-                new Component
-                {
-                    Id = 62,
-                    Category = "Корпус",
-                    Name = "Lian Li PC-O11 Dynamic EVO",
-                    Specs = "Mid-Tower ATX/E-ATX, двойная камера, стекло",
-                    TDP = 0,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 14990,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/ABS_computer_case.jpg/320px-ABS_computer_case.jpg"
-                },
-                new Component
-                {
-                    Id = 63,
-                    Category = "Корпус",
-                    Name = "Deepcool CH510",
-                    Specs = "Mid-Tower ATX, закалённое стекло, USB-C",
-                    TDP = 0,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 5490,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/ABS_computer_case.jpg/320px-ABS_computer_case.jpg"
-                },
-
-                // ── ОХЛАЖДЕНИЕ ────────────────────────────────────────────────────────
-                new Component
-                {
-                    Id = 70,
-                    Category = "Охлаждение",
-                    Socket = "AM5,LGA1700",
-                    Name = "Noctua NH-D15 chromax.black",
-                    Specs = "Башенный, 2×140mm вентилятора, до 250W TDP",
-                    TDP = 5,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 9990,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Noctua_NH-D15_cooler.jpg/320px-Noctua_NH-D15_cooler.jpg"
-                },
-                new Component
-                {
-                    Id = 71,
-                    Category = "Охлаждение",
-                    Socket = "AM5,LGA1700",
-                    Name = "be quiet! Dark Rock Pro 4",
-                    Specs = "Башенный, 2×135mm вентилятора, до 250W TDP",
-                    TDP = 5,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 8490,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Noctua_NH-D15_cooler.jpg/320px-Noctua_NH-D15_cooler.jpg"
-                },
-                new Component
-                {
-                    Id = 72,
-                    Category = "Охлаждение",
-                    Socket = "AM5,LGA1700",
-                    Name = "Corsair iCUE H150i Elite LCD 360mm",
-                    Specs = "СВО 360mm, 3×120mm, LCD экран, RGB",
-                    TDP = 10,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 19990,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Noctua_NH-D15_cooler.jpg/320px-Noctua_NH-D15_cooler.jpg"
-                },
-                new Component
-                {
-                    Id = 73,
-                    Category = "Охлаждение",
-                    Socket = "AM5,LGA1700",
-                    Name = "DeepCool AK620",
-                    Specs = "Башенный, 2×120mm вентилятора, до 260W TDP",
-                    TDP = 5,
-                    PowerScore = 0,
-                    PsuWatts = 0,
-                    Price = 4990,
-                    InStock = true,
-                    ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Noctua_NH-D15_cooler.jpg/320px-Noctua_NH-D15_cooler.jpg"
-                }
+}
             );
         }
     }
